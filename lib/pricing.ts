@@ -1,0 +1,186 @@
+export const PRICE_MIN = 7000;
+export const PRICE_MAX = 12000;
+
+export type RoofMaterial = "polycarbonaat-opaal" | "polycarbonaat-helder" | "glas-helder";
+
+export interface RoofMaterialOption {
+  id: RoofMaterial;
+  label: string;
+  description: string;
+  image: string;
+}
+
+export const ROOF_MATERIALS: RoofMaterialOption[] = [
+  {
+    id: "polycarbonaat-opaal",
+    label: "Polycarbonaat opaal",
+    description: "Melkwit en lichtdempend, voor een zachte lichtinval en meer privacy",
+    image: "/dakopties/polycarbonaat-opaal.png",
+  },
+  {
+    id: "polycarbonaat-helder",
+    label: "Polycarbonaat helder",
+    description: "Transparant en lichtgewicht, met een gunstige prijs-kwaliteitverhouding",
+    image: "/dakopties/polycarbonaat-helder.png",
+  },
+  {
+    id: "glas-helder",
+    label: "Glas helder",
+    description: "Volledig transparant glazen dak voor maximale lichtinval",
+    image: "/dakopties/glas-helder.png",
+  },
+];
+
+export interface FrameColorOption {
+  id: string;
+  label: string;
+  ral: string;
+  hex: string;
+}
+
+export const FRAME_COLORS: FrameColorOption[] = [
+  { id: "antraciet", label: "Antraciet", ral: "RAL 7016", hex: "#26292E" },
+  { id: "wit", label: "Signaalwit", ral: "RAL 9010", hex: "#F1EEE7" },
+  { id: "koper-bruin", label: "Koperbruin", ral: "RAL 8019", hex: "#4A3A31" },
+  { id: "zwart", label: "Dieprzwart", ral: "RAL 9005", hex: "#0B0C0E" },
+];
+
+export type SidePosition = "voorkant" | "links" | "rechts";
+export type ZijwandPosition = "links" | "rechts";
+
+export interface PositionOption<T extends string> {
+  id: T;
+  label: string;
+}
+
+export const SCHUIFWAND_POSITIONS: PositionOption<SidePosition>[] = [
+  { id: "voorkant", label: "Voorkant" },
+  { id: "links", label: "Linkerzijkant" },
+  { id: "rechts", label: "Rechterzijkant" },
+];
+
+export const ZIJWAND_POSITIONS: PositionOption<ZijwandPosition>[] = [
+  { id: "links", label: "Linkerzijwand" },
+  { id: "rechts", label: "Rechterzijwand" },
+];
+
+export const SCREEN_POSITIONS: PositionOption<SidePosition>[] = [
+  { id: "voorkant", label: "Voorkant" },
+  { id: "links", label: "Linkerzijkant" },
+  { id: "rechts", label: "Rechterzijkant" },
+];
+
+export interface ConfiguratorState {
+  width: number; // cm, 300 - 700
+  depth: number; // cm, 250 - 500
+  roofMaterial: RoofMaterial;
+  frameColor: string;
+  schuifwanden: SidePosition[];
+  zijwanden: ZijwandPosition[];
+  ledverlichting: boolean;
+  screens: SidePosition[];
+  verwarming: number; // 0 - 2 infrarood units
+}
+
+export const CONFIGURATOR_DEFAULTS: ConfiguratorState = {
+  width: 400,
+  depth: 300,
+  roofMaterial: "polycarbonaat-opaal",
+  frameColor: "antraciet",
+  schuifwanden: [],
+  zijwanden: [],
+  ledverlichting: true,
+  screens: [],
+  verwarming: 0,
+};
+
+export const LIMITS = {
+  width: { min: 300, max: 700, step: 10 },
+  depth: { min: 250, max: 500, step: 10 },
+  verwarming: { min: 0, max: 2, step: 1 },
+};
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
+interface PriceBreakdownItem {
+  label: string;
+  weight: number;
+  score: number;
+}
+
+export interface PriceResult {
+  price: number;
+  min: number;
+  max: number;
+  breakdown: PriceBreakdownItem[];
+}
+
+/**
+ * Indicative pricing model. Every option contributes a weighted 0-1 score;
+ * the weighted sum is mapped onto the indicative range of PRICE_MIN - PRICE_MAX.
+ * This is a marketing estimate, not a quotation.
+ */
+export function calculatePrice(state: ConfiguratorState): PriceResult {
+  const areaScore = clamp01(
+    ((state.width - LIMITS.width.min) / (LIMITS.width.max - LIMITS.width.min)) * 0.5 +
+      ((state.depth - LIMITS.depth.min) / (LIMITS.depth.max - LIMITS.depth.min)) * 0.5
+  );
+
+  const roofScore =
+    state.roofMaterial === "polycarbonaat-opaal" ? 0 : state.roofMaterial === "polycarbonaat-helder" ? 0.4 : 1;
+  const schuifwandenScore = clamp01(state.schuifwanden.length / SCHUIFWAND_POSITIONS.length);
+  const zijwandenScore = clamp01(state.zijwanden.length / ZIJWAND_POSITIONS.length);
+  const screensScore = clamp01(state.screens.length / SCREEN_POSITIONS.length);
+  const verwarmingScore = clamp01(state.verwarming / LIMITS.verwarming.max);
+  const ledScore = state.ledverlichting ? 1 : 0;
+
+  const breakdown: PriceBreakdownItem[] = [
+    { label: "Afmetingen", weight: 0.3, score: areaScore },
+    { label: "Dakmateriaal", weight: 0.2, score: roofScore },
+    { label: "Glazen schuifwanden", weight: 0.2, score: schuifwandenScore },
+    { label: "Zijwanden", weight: 0.1, score: zijwandenScore },
+    { label: "Screens", weight: 0.1, score: screensScore },
+    { label: "Verwarming", weight: 0.06, score: verwarmingScore },
+    { label: "Ledverlichting", weight: 0.04, score: ledScore },
+  ];
+
+  const weightedScore = breakdown.reduce((sum, item) => sum + item.weight * item.score, 0);
+  const rawPrice = PRICE_MIN + weightedScore * (PRICE_MAX - PRICE_MIN);
+  const price = Math.min(PRICE_MAX, Math.max(PRICE_MIN, Math.round(rawPrice / 50) * 50));
+
+  return { price, min: PRICE_MIN, max: PRICE_MAX, breakdown };
+}
+
+export function describeConfiguration(state: ConfiguratorState): string[] {
+  const color = FRAME_COLORS.find((c) => c.id === state.frameColor);
+  const roof = ROOF_MATERIALS.find((r) => r.id === state.roofMaterial);
+  const lines: string[] = [
+    `Afmetingen: ${state.width} x ${state.depth} cm`,
+    `Dak: ${roof ? roof.label : state.roofMaterial}`,
+    `Kleur frame: ${color ? `${color.label} (${color.ral})` : state.frameColor}`,
+  ];
+  if (state.schuifwanden.length > 0) {
+    const labels = SCHUIFWAND_POSITIONS.filter((p) => state.schuifwanden.includes(p.id)).map((p) => p.label);
+    lines.push(`Glazen schuifwanden: ${labels.join(", ")}`);
+  }
+  if (state.zijwanden.length > 0) {
+    const labels = ZIJWAND_POSITIONS.filter((p) => state.zijwanden.includes(p.id)).map((p) => p.label);
+    lines.push(`Zijwanden: ${labels.join(", ")}`);
+  }
+  if (state.screens.length > 0) {
+    const labels = SCREEN_POSITIONS.filter((p) => state.screens.includes(p.id)).map((p) => p.label);
+    lines.push(`Screens: ${labels.join(", ")}`);
+  }
+  if (state.verwarming > 0) lines.push(`Infrarood verwarming: ${state.verwarming}`);
+  if (state.ledverlichting) lines.push("Ledverlichting: ja");
+  return lines;
+}
+
+export function configuratorStateToQuery(state: ConfiguratorState, price: number): string {
+  const params = new URLSearchParams();
+  params.set("prijs", String(price));
+  params.set("samenvatting", describeConfiguration(state).join(" | "));
+  return params.toString();
+}
