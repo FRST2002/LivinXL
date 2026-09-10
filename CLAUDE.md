@@ -52,8 +52,9 @@ homepage under the `#termijnbetaling` section id, and every link that used to po
 (footer, CtaBanner, other pages' badges/CTAs) now points to `/#termijnbetaling` instead.
 `components/FinancingCalculator.tsx` holds its own `downPayment`/`termMonths` state and is used in two
 places with different props: the homepage (`FinancingStandalone`, amount is user-editable via
-`onAmountChange`), and inside `Configurator` (`compact`, `showInterest={false}`, amount fixed to the
-configurator's calculated price). It accepts an optional `onChange` callback that reports the current
+`onAmountChange`), and inside `Configurator` (`compact`, amount fixed to the configurator's calculated
+price). It never shows interest cost — only the monthly payment — anywhere on the site. It accepts an
+optional `onChange` callback that reports the current
 `{ principal, downPayment, termMonths, monthlyPayment }` whenever the calculation changes — this is how
 `Configurator` captures the customer's chosen monthly payment to forward to the offerte flow, without lifting
 the calculator's internal state up.

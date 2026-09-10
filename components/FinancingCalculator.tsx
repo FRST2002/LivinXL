@@ -26,8 +26,6 @@ type Props = {
   className?: string;
   /** Force a single-column layout, for use in a narrow sidebar. */
   compact?: boolean;
-  /** Show the total interest cost line. Off by default in the configurator, where only the monthly payment matters. */
-  showInterest?: boolean;
   /** Reports the current selection (term, down payment, resulting monthly payment) whenever it changes. */
   onChange?: (change: FinancingCalculatorChange) => void;
 };
@@ -48,7 +46,6 @@ export default function FinancingCalculator({
   amountLabel = "Verandaprijs",
   className,
   compact = false,
-  showInterest = true,
   onChange,
 }: Props) {
   const [downPayment, setDownPayment] = useState(0);
@@ -170,23 +167,13 @@ export default function FinancingCalculator({
                 <dt className="text-sm text-offwhite-300/80">Financieringsbedrag</dt>
                 <dd className="text-sm font-semibold text-white">{formatCurrency(principal)}</dd>
               </div>
-              <div
-                className={`flex items-center justify-between ${
-                  showInterest ? "border-b border-white/10 pb-3" : ""
-                }`}
-              >
+              <div className="flex items-center justify-between">
                 <dt className="text-sm text-offwhite-300/80">Maandbedrag</dt>
                 <dd className="text-xl font-bold text-copper-200">
                   {formatCurrencyPrecise(result.monthlyPayment)}
                   <span className="ml-1 text-xs font-medium text-offwhite-400/70">/ mnd</span>
                 </dd>
               </div>
-              {showInterest && (
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm text-offwhite-300/80">Rentekosten</dt>
-                  <dd className="text-sm font-semibold text-white">{formatCurrency(result.totalInterest)}</dd>
-                </div>
-              )}
             </dl>
           </div>
 

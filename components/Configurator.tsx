@@ -340,7 +340,6 @@ export default function Configurator() {
         <FinancingCalculator
           amount={prijs ?? 0}
           compact
-          showInterest={false}
           className="order-1 xl:order-2"
           onChange={(change) => setFinancing({ monthlyPayment: change.monthlyPayment, termMonths: change.termMonths })}
         />
