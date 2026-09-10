@@ -14,5 +14,8 @@ export async function GET() {
     keyPrefix: key ? key.slice(0, 6) : null,
     fromEmail: process.env.RESEND_FROM_EMAIL ?? null,
     toEmail: process.env.RESEND_TO_EMAIL ?? null,
+    testDebugVar: process.env.TEST_DEBUG_VAR ?? null,
+    nodeEnv: process.env.NODE_ENV ?? null,
+    vercelEnv: process.env.VERCEL_ENV ?? null,
   });
 }
