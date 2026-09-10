@@ -34,6 +34,7 @@ export default function ContactForm() {
     const next: Partial<Record<keyof FormState, string>> = {};
     if (!form.naam.trim()) next.naam = "Vul uw naam in.";
     if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = "Vul een geldig e-mailadres in.";
+    if (!form.telefoon.trim()) next.telefoon = "Vul een telefoonnummer in.";
     if (!form.bericht.trim()) next.bericht = "Vul uw bericht in.";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -95,7 +96,7 @@ export default function ContactForm() {
           {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
         </div>
         <div>
-          <label className="field-label" htmlFor="telefoon">Telefoonnummer (optioneel)</label>
+          <label className="field-label" htmlFor="telefoon">Telefoonnummer</label>
           <input
             id="telefoon"
             type="tel"
@@ -103,6 +104,7 @@ export default function ContactForm() {
             value={form.telefoon}
             onChange={(e) => update("telefoon", e.target.value)}
           />
+          {errors.telefoon && <p className="mt-1 text-xs text-red-600">{errors.telefoon}</p>}
         </div>
         <div>
           <label className="field-label" htmlFor="onderwerp">Onderwerp</label>

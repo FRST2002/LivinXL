@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   const body = data as Record<string, unknown>;
 
-  const required = ["naam", "email", "bericht"];
+  const required = ["naam", "email", "telefoon", "bericht"];
   const missing = required.filter((field) => !String(body[field] ?? "").trim());
 
   if (missing.length > 0) {
