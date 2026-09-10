@@ -331,24 +331,21 @@ export default function Configurator() {
             </div>
           </div>
         </div>
-
-        {/* Mobile/tablet CTA: the summary card is only sticky from xl upward, so repeat the CTA here */}
-        <div className="card flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between xl:hidden">
-          <div>
-            <p className="text-xs text-anthracite-400">Uw indicatieve richtprijs</p>
-            <p className={`text-2xl font-extrabold tracking-tightest text-anthracite-700 ${prijsLoading ? "opacity-50" : ""}`}>
-              {prijs != null ? formatCurrency(prijs) : "..."}
-            </p>
-          </div>
-          <Link href={offerteHref} className="btn-primary w-full shrink-0 sm:w-auto">
-            Vraag offerte aan voor deze configuratie
-          </Link>
-        </div>
       </div>
 
-      {/* Right: sticky summary + financing */}
+      {/* Right: sticky summary + financing. On mobile/tablet the financing calculator
+          comes first, so customers see an indicative monthly payment before they can
+          request an offerte; on desktop (xl+) the order stays summary-then-financing. */}
       <div className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
-        <div className="card p-6 sm:p-8">
+        <FinancingCalculator
+          amount={prijs ?? 0}
+          compact
+          showInterest={false}
+          className="order-1 xl:order-2"
+          onChange={(change) => setFinancing({ monthlyPayment: change.monthlyPayment, termMonths: change.termMonths })}
+        />
+
+        <div className="card order-2 p-6 sm:p-8 xl:order-1">
           <span className="eyebrow">Uw configuratie</span>
           <div className="mt-3 flex items-end gap-2">
             <span className={`text-4xl font-extrabold tracking-tightest text-anthracite-700 ${prijsLoading ? "opacity-50" : ""}`}>
@@ -376,13 +373,6 @@ export default function Configurator() {
             </Link>
           </div>
         </div>
-
-        <FinancingCalculator
-          amount={prijs ?? 0}
-          compact
-          showInterest={false}
-          onChange={(change) => setFinancing({ monthlyPayment: change.monthlyPayment, termMonths: change.termMonths })}
-        />
       </div>
     </div>
   );
