@@ -101,10 +101,6 @@ export default function ProjectenPage() {
           title="Door ons geleverd en gemonteerd"
           description="Een impressie van LivinXL Vista veranda's bij onze klanten thuis: verschillende afmetingen, daksoorten, kleuren en indelingen. Iedere veranda wordt op maat ontworpen voor de specifieke situatie. Onderstaande selectie is slechts een greep uit ons werk."
         />
-        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-copper-50 px-4 py-2 text-sm font-semibold text-copper-600">
-          <IconCheck className="h-4 w-4" />
-          50+ projecten gerealiseerd in Nederland en België
-        </div>
       </section>
 
       <section className="container-page pb-16 sm:pb-24">
@@ -130,6 +126,11 @@ export default function ProjectenPage() {
               </div>
             </div>
           ))}
+          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-copper/20 bg-copper-50 p-8 text-center shadow-card">
+            <IconCheck className="h-8 w-8 text-copper" />
+            <p className="text-3xl font-extrabold tracking-tightest text-anthracite-700">50+</p>
+            <p className="text-sm font-semibold text-copper-600">Projecten gerealiseerd in Nederland en België</p>
+          </div>
         </div>
 
         <div className="mt-12 flex flex-col items-start gap-4 rounded-2xl bg-white p-8 shadow-card sm:flex-row sm:items-center sm:justify-between">
