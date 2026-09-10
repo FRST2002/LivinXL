@@ -37,6 +37,7 @@ De formulieren (`/offerte`, `/dealer-worden`, `/contact`) posten naar eenvoudige
 (`app/api/*/route.ts`) die de invoer valideren en een bevestiging teruggeven.
 
 `/offerte` en `/contact` sturen daarnaast (via `lib/server/email.ts` en de [Resend](https://resend.com)
-API) een e-mail met de volledige aanvraag naar `info@livinxl.nl`. Dit vereist een `RESEND_API_KEY`
-environment variable (zie `.env.example`) — zonder die key werken de formulieren nog gewoon, maar wordt
+API) een e-mail met de volledige aanvraag naar `info@livinxl.nl`. Dit vereist een `RESEND_KEY_LIVINXL`
+environment variable (zie `.env.example`; bewust niet "RESEND_API_KEY" genoemd, zie CLAUDE.md) — zonder
+die key werken de formulieren nog gewoon, maar wordt
 er geen e-mail verstuurd. `/dealer-worden` heeft nog geen e-mail-/CRM-koppeling.

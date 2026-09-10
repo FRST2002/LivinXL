@@ -81,9 +81,14 @@ The offerte and contact routes additionally call `lib/server/email.ts` (`sendOff
 `sendContactEmail`), which uses the `resend` package to email the full submission — for offerte, this
 includes the customer's details, the configuration summary, and the price/monthly payment, i.e. the same
 content the customer sees in their on-screen offerte — to `RESEND_TO_EMAIL` (default `info@livinxl.nl`).
-This requires a `RESEND_API_KEY` environment variable (see `.env.example`); if it's unset, `getClient()`
-returns `null` and the email is silently skipped — forms still succeed for the customer either way, and
-email failures are caught and logged, never surfaced as a form error. `/dealer-worden` has no email
+This requires a `RESEND_KEY_LIVINXL` environment variable (see `.env.example`); if it's unset,
+`getClient()` returns `null` and the email is silently skipped — forms still succeed for the customer
+either way, and email failures are caught and logged, never surfaced as a form error. Note the variable
+is deliberately **not** named `RESEND_API_KEY`: on this project's Vercel dashboard that exact name kept
+reverting to unset (deleted/recreated multiple times, across both "Secret" and "Config" types, redeployed
+each time, confirmed via a temporary `/api/debug-env` route and Vercel's runtime logs) while every other
+variable name worked immediately — so don't rename it back without re-verifying against
+`/api/debug-env` first. `/dealer-worden` has no email
 integration yet. No database is involved anywhere in this app.
 
 ### Styling

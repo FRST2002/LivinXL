@@ -7,11 +7,13 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const key = process.env.RESEND_API_KEY;
+  const key = process.env.RESEND_KEY_LIVINXL;
+  const oldKey = process.env.RESEND_API_KEY;
   return NextResponse.json({
     hasResendKey: Boolean(key),
     keyLength: key?.length ?? 0,
     keyPrefix: key ? key.slice(0, 6) : null,
+    hasOldResendApiKey: Boolean(oldKey),
     fromEmail: process.env.RESEND_FROM_EMAIL ?? null,
     toEmail: process.env.RESEND_TO_EMAIL ?? null,
     testDebugVar: process.env.TEST_DEBUG_VAR ?? null,

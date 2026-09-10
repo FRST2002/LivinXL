@@ -4,10 +4,14 @@ import { formatCurrency } from "@/lib/finance";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "LivinXL Website <noreply@livinxl.nl>";
 const TO_EMAIL = process.env.RESEND_TO_EMAIL || "info@livinxl.nl";
 
+// Named differently from "RESEND_API_KEY" on purpose: that exact variable name
+// got stuck on the Vercel project (kept reading as unset even after being
+// deleted and recreated several times, while every other variable name works
+// fine) — using a fresh name sidesteps whatever is wrong with that one.
 function getClient(): Resend | null {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_KEY_LIVINXL;
   if (!apiKey) {
-    console.error("RESEND_API_KEY ontbreekt in deze omgeving — e-mail wordt overgeslagen.");
+    console.error("RESEND_KEY_LIVINXL ontbreekt in deze omgeving — e-mail wordt overgeslagen.");
     return null;
   }
   return new Resend(apiKey);
