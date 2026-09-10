@@ -133,6 +133,8 @@ export function configuratorStateToQuery(
 ): string {
   const params = new URLSearchParams();
   params.set("prijs", String(price));
+  params.set("breedte", String(state.width));
+  params.set("diepte", String(state.depth));
   params.set("samenvatting", describeConfiguration(state).join(" | "));
   if (financing) {
     params.set("maandbedrag", String(Math.round(financing.monthlyPayment)));

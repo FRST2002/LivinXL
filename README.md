@@ -15,11 +15,10 @@ Open vervolgens [http://localhost:3000](http://localhost:3000).
 
 ## Paginastructuur
 
-- `/` — Homepage
+- `/` — Homepage (bevat ook de financieringsrekentool, onder `#termijnbetaling`)
 - `/product/vista` — Productpagina LivinXL Vista
 - `/projecten` — Projecten
 - `/werkwijze` — Werkwijze
-- `/financiering` — Financieringsrekentool (annuïtair, tot 180 maanden)
 - `/dealer-worden` — Dealer worden (aanmeldformulier)
 - `/contact` — Contactformulier
 - `/faq` — Veelgestelde vragen
@@ -29,7 +28,7 @@ Open vervolgens [http://localhost:3000](http://localhost:3000).
 ## Belangrijkste logica
 
 - `lib/pricing.ts` — configuratie-opties (afmetingen, dakmateriaal, kleuren, posities)
-- `lib/server/verandaPrijzen.ts` — de daadwerkelijke prijsberekening (verkoopprijs = 200% van de inkoopprijs). Dit
+- `lib/server/verandaPrijzen.ts` — de daadwerkelijke prijsberekening (verkoopprijs = 220% van de inkoopprijs). Dit
   bestand mag nooit vanuit een "use client"-component worden geïmporteerd; alleen
   `app/api/prijs/route.ts` roept het aan, zodat inkoopprijzen nooit in de browser terechtkomen.
 - `lib/finance.ts` — annuïtaire berekening (standaard 7% indicatieve jaarrente, looptijd tot 180 maanden)

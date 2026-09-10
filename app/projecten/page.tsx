@@ -134,7 +134,7 @@ export default function ProjectenPage() {
             in termijnen tot 180 maanden.
           </p>
           <div className="flex shrink-0 gap-3">
-            <Link href="/financiering" className="btn-ghost">
+            <Link href="/#termijnbetaling" className="btn-ghost">
               Betaal in termijnen
             </Link>
             <Link href="/configurator" className="btn-primary">

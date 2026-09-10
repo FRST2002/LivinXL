@@ -30,7 +30,7 @@ exists. `npx tsc --noEmit` can be used for a standalone type-check.
   consumed by `/offerte`. No purchase prices or pricing math live here.
 - `lib/server/verandaPrijzen.ts` — holds the real MB Aluminium Partners purchase-price tables (frame+roof
   by width/depth, schuifwanden per panel, zijwanden, screens, led) and `berekenVerkoopprijs()`, which sums
-  the relevant purchase prices and doubles the total (sell price = 200% of purchase price). **This file must never be imported from a
+  the relevant purchase prices and multiplies the total by 2.2 (sell price = 220% of purchase price). **This file must never be imported from a
   "use client" component** — doing so would ship purchase prices into the browser bundle. It is only
   imported by `app/api/prijs/route.ts`, a POST route handler that takes a configuration and returns just
   `{ prijs }` — never the underlying cost breakdown. (Ideally the `server-only` package would enforce this
@@ -42,14 +42,17 @@ exists. `npx tsc --noEmit` can be used for a standalone type-check.
 - `lib/finance.ts` — `calculateAnnuity()`, a standalone annuity calculation (7% default indicative rate, up
   to 180 months), plus `nl-NL` currency formatters. Independent of the pricing model above; any page can
   finance any amount. `PRICE_MIN`/`PRICE_MAX` in `lib/pricing.ts` (€7.000–€12.000) are only used as slider
-  bounds for the generic, configuration-independent calculator on `/` and `/financiering`
-  (`FinancingStandalone`) — they are not, and should not be presented as, the real achievable price range.
+  bounds for the generic, configuration-independent calculator on the homepage (`FinancingStandalone`) —
+  they are not, and should not be presented as, the real achievable price range.
 
 ### FinancingCalculator is the one reusable financing widget
 
-`components/FinancingCalculator.tsx` holds its own `downPayment`/`termMonths` state and is used in three
-places with different props: the homepage/`.../financiering` (`FinancingStandalone`, amount is user-editable
-via `onAmountChange`), and inside `Configurator` (`compact`, `showInterest={false}`, amount fixed to the
+There is no standalone `/financiering` page — it was removed; the financing calculator lives inline on the
+homepage under the `#termijnbetaling` section id, and every link that used to point to `/financiering`
+(footer, CtaBanner, other pages' badges/CTAs) now points to `/#termijnbetaling` instead.
+`components/FinancingCalculator.tsx` holds its own `downPayment`/`termMonths` state and is used in two
+places with different props: the homepage (`FinancingStandalone`, amount is user-editable via
+`onAmountChange`), and inside `Configurator` (`compact`, `showInterest={false}`, amount fixed to the
 configurator's calculated price). It accepts an optional `onChange` callback that reports the current
 `{ principal, downPayment, termMonths, monthlyPayment }` whenever the calculation changes — this is how
 `Configurator` captures the customer's chosen monthly payment to forward to the offerte flow, without lifting

@@ -45,7 +45,7 @@ export default function FinancingCalculator({
   onAmountChange,
   minAmount = 0,
   maxAmount = amount,
-  amountLabel = "Verandaprijs (indicatief)",
+  amountLabel = "Verandaprijs",
   className,
   compact = false,
   showInterest = true,

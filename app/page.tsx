@@ -41,8 +41,8 @@ const WHY_LIVINXL = [
   },
   {
     icon: IconShield,
-    title: "Transparante indicatieve prijzen",
-    body: "De configurator geeft direct een indicatieve richtprijs op basis van uw configuratie. De definitieve offerte volgt na het adviesgesprek en inmeten.",
+    title: "Transparante prijzen",
+    body: "De configurator geeft direct een richtprijs op basis van uw configuratie. De definitieve offerte volgt na het adviesgesprek en inmeten.",
   },
   {
     icon: IconCoins,
@@ -173,7 +173,7 @@ export default function HomePage() {
             volledig naar wens samen te stellen en het hele jaar door te gebruiken.
           </p>
           <Link
-            href="/financiering"
+            href="/#termijnbetaling"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-copper-50 px-4 py-2 text-sm font-semibold text-copper-600 transition-colors hover:bg-copper-100"
           >
             <IconCoins className="h-4 w-4" />
@@ -189,8 +189,8 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-anthracite-400">
-            Indicatieve richtprijs, inclusief montage — desgewenst te betalen in termijnen.{" "}
-            <Link href="/financiering" className="font-semibold text-copper hover:text-copper-600">
+            Richtprijs, inclusief montage — desgewenst te betalen in termijnen.{" "}
+            <Link href="/#termijnbetaling" className="font-semibold text-copper hover:text-copper-600">
               Bereken uw maandbedrag
             </Link>
           </p>
@@ -246,7 +246,7 @@ export default function HomePage() {
       </section>
 
       {/* Betaal in termijnen */}
-      <section className="bg-anthracite-700 py-16 sm:py-24">
+      <section id="termijnbetaling" className="scroll-mt-24 bg-anthracite-700 py-16 sm:py-24">
         <div className="container-page grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <div>
             <span className="eyebrow text-copper-300">Betaal in termijnen</span>
@@ -259,7 +259,7 @@ export default function HomePage() {
               zelf hoe laag het maandbedrag start.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/financiering" className="btn-primary">
+              <Link href="/#termijnbetaling" className="btn-primary">
                 Bereken uw maandbedrag
                 <IconArrowRight className="h-4 w-4" />
               </Link>
@@ -319,7 +319,7 @@ export default function HomePage() {
           </div>
           <div className="mt-10">
             <Link
-              href="/financiering"
+              href="/#termijnbetaling"
               className="inline-flex items-center gap-2 text-sm font-semibold text-copper hover:text-copper-600"
             >
               Bereken uw maandbedrag
@@ -465,7 +465,7 @@ export default function HomePage() {
               Bekijk alle vragen
               <IconArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/financiering" className="btn-primary shrink-0">
+            <Link href="/#termijnbetaling" className="btn-primary shrink-0">
               Bereken uw maandbedrag
               <IconArrowRight className="h-4 w-4" />
             </Link>

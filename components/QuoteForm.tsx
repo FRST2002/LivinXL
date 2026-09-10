@@ -7,15 +7,6 @@ import { IconCheck } from "@/components/icons";
 import { formatCurrency } from "@/lib/finance";
 import { FRAME_COLORS } from "@/lib/pricing";
 
-const OFFERTE_SPECS = [
-  { label: "Materiaal frame", value: "Aluminium, poedergecoat" },
-  { label: "Breedte", value: "300 – 700 cm" },
-  { label: "Diepte", value: "250 – 500 cm" },
-  { label: "Dakmateriaal", value: "Polycarbonaat of glas (helder / opaal)" },
-  { label: "Kleuren", value: FRAME_COLORS.map((c) => `${c.label} (${c.ral})`).join(", ") },
-  { label: "Montage", value: "Door eigen montageteam" },
-];
-
 const OFFERTE_STAPPEN = [
   { title: "Adviesgesprek", description: "Wij nemen contact op om uw configuratie en wensen door te nemen." },
   {
@@ -81,6 +72,8 @@ const PERIODE_OPTIONS = ["Zo snel mogelijk", "Binnen 3 maanden", "Binnen 6 maand
 
 interface ConfiguratieSummary {
   prijs: number | null;
+  breedte: number | null;
+  diepte: number | null;
   lines: string[];
   maandbedrag: number | null;
   looptijd: number | null;
@@ -92,6 +85,8 @@ function useConfiguratieFromQuery(): ConfiguratieSummary | null {
   return useMemo(() => {
     const prijsRaw = searchParams.get("prijs");
     const samenvattingRaw = searchParams.get("samenvatting");
+    const breedteRaw = searchParams.get("breedte");
+    const diepteRaw = searchParams.get("diepte");
     const maandbedragRaw = searchParams.get("maandbedrag");
     const looptijdRaw = searchParams.get("looptijd");
 
@@ -99,6 +94,8 @@ function useConfiguratieFromQuery(): ConfiguratieSummary | null {
 
     return {
       prijs: prijsRaw ? Number(prijsRaw) : null,
+      breedte: breedteRaw ? Number(breedteRaw) : null,
+      diepte: diepteRaw ? Number(diepteRaw) : null,
       lines: samenvattingRaw
         ? samenvattingRaw
             .split("|")
@@ -109,6 +106,17 @@ function useConfiguratieFromQuery(): ConfiguratieSummary | null {
       looptijd: looptijdRaw ? Number(looptijdRaw) : null,
     };
   }, [searchParams]);
+}
+
+function buildOfferteSpecs(configuratie: ConfiguratieSummary | null) {
+  return [
+    { label: "Materiaal frame", value: "Aluminium, poedergecoat" },
+    { label: "Breedte", value: configuratie?.breedte != null ? `${configuratie.breedte} cm` : "300 – 700 cm" },
+    { label: "Diepte", value: configuratie?.diepte != null ? `${configuratie.diepte} cm` : "250 – 500 cm" },
+    { label: "Dakmateriaal", value: "Polycarbonaat of glas (helder / opaal)" },
+    { label: "Kleuren", value: FRAME_COLORS.map((c) => `${c.label} (${c.ral})`).join(", ") },
+    { label: "Montage", value: "Door eigen montageteam" },
+  ];
 }
 
 function genereerOfferteNummer(): string {
@@ -218,8 +226,8 @@ export default function QuoteForm() {
           <div className="p-6 sm:p-10">
             <p className="text-base leading-relaxed text-anthracite-600">
               Beste {voornaam}, hartelijk dank voor uw interesse in de LivinXL Vista. Hieronder vindt u een
-              overzicht van uw configuratie, een indicatieve prijs en de vervolgstappen, zodat u direct een
-              goed beeld heeft van wat u van ons kunt verwachten.
+              overzicht van uw configuratie, de prijs en de vervolgstappen, zodat u direct een goed beeld
+              heeft van wat u van ons kunt verwachten.
             </p>
 
             <div className="mt-8 grid grid-cols-1 gap-8 border-t border-anthracite-700/10 pt-8 break-inside-avoid sm:grid-cols-2">
@@ -262,7 +270,7 @@ export default function QuoteForm() {
             {configuratie?.prijs != null && (
               <div className="mt-8 grid grid-cols-1 gap-4 rounded-xl bg-anthracite-700 p-6 text-white break-inside-avoid sm:grid-cols-2">
                 <div>
-                  <p className="text-xs text-offwhite-300/70">Totaalbedrag veranda (indicatief)</p>
+                  <p className="text-xs text-offwhite-300/70">Totaalbedrag veranda</p>
                   <p className="mt-1 text-2xl font-bold">{formatCurrency(configuratie.prijs)}</p>
                 </div>
                 {configuratie.maandbedrag != null && (
@@ -285,7 +293,7 @@ export default function QuoteForm() {
                 LivinXL Vista in het kort
               </h3>
               <dl className="mt-4 divide-y divide-anthracite-700/8">
-                {OFFERTE_SPECS.map((spec) => (
+                {buildOfferteSpecs(configuratie).map((spec) => (
                   <div key={spec.label} className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[160px_1fr] sm:gap-4">
                     <dt className="text-sm font-semibold text-anthracite-700">{spec.label}</dt>
                     <dd className="text-sm text-anthracite-500">{spec.value}</dd>
@@ -350,10 +358,10 @@ export default function QuoteForm() {
             )}
 
             <p className="mt-10 border-t border-anthracite-700/10 pt-6 text-xs leading-relaxed text-anthracite-400">
-              Dit is een indicatieve offerte op basis van uw configuratie; hieraan kunnen geen rechten worden
-              ontleend. De definitieve prijs en het definitieve financieringsvoorstel volgen na het
-              adviesgesprek en het inmeten op locatie. Genoemde bedragen zijn exclusief eventuele
-              rentekosten van de financiering.
+              Deze offerte is gebaseerd op uw configuratie; hieraan kunnen geen rechten worden ontleend.
+              De definitieve prijs en het definitieve financieringsvoorstel volgen na het adviesgesprek
+              en het inmeten op locatie. Genoemde bedragen zijn exclusief eventuele rentekosten van de
+              financiering.
             </p>
           </div>
         </div>
@@ -394,7 +402,7 @@ export default function QuoteForm() {
             <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-anthracite-700/8 pt-5">
               {configuratie.prijs != null && (
                 <div>
-                  <p className="text-xs text-anthracite-400">Totaalbedrag veranda (indicatief)</p>
+                  <p className="text-xs text-anthracite-400">Totaalbedrag veranda</p>
                   <p className="text-lg font-bold text-anthracite-700">{formatCurrency(configuratie.prijs)}</p>
                 </div>
               )}

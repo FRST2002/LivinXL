@@ -14,7 +14,7 @@
  * a transcription slip here directly affects real margin.
  */
 
-const MARGE_FACTOR = 2; // verkoopprijs = 200% van de inkoopprijs (inkoop verdubbeld)
+const MARGE_FACTOR = 2.2; // verkoopprijs = 220% van de inkoopprijs (inkoop x 2,2)
 
 /** Rounds a value to the nearest available breakpoint in a sorted list. */
 function nearest(value: number, options: number[]): number {
@@ -103,7 +103,7 @@ function spanForPosition(position: SidePositionKey | ZijwandPositionKey, width: 
 }
 
 /**
- * Calculates the sell price (200% van de inkoopprijs) for a veranda configuration.
+ * Calculates the sell price (220% van de inkoopprijs) for a veranda configuration.
  * This is the only function that should ever touch the raw purchase prices above.
  */
 export function berekenVerkoopprijs(input: VerandaPrijsInput): number {

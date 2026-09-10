@@ -14,7 +14,7 @@ const columns = [
     title: "Bedrijf",
     links: [
       { href: "/dealer-worden", label: "Dealer worden" },
-      { href: "/financiering", label: "Financiering" },
+      { href: "/#termijnbetaling", label: "Betaal in termijnen" },
       { href: "/faq", label: "Veelgestelde vragen" },
       { href: "/contact", label: "Contact" },
     ],

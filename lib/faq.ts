@@ -4,7 +4,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Is financiering van de veranda mogelijk?",
     answer:
-      "Ja. Op de pagina Financiering kunt u een indicatieve, annuïtaire berekening maken met een aanbetaling naar keuze en een looptijd tot 180 maanden. De financiering zelf loopt via een onafhankelijke financier, die uw aanvraag toetst en de definitieve voorwaarden bepaalt.",
+      "Ja. Op de homepage kunt u een indicatieve, annuïtaire berekening maken met een aanbetaling naar keuze en een looptijd tot 180 maanden. De financiering zelf loopt via een onafhankelijke financier, die uw aanvraag toetst en de definitieve voorwaarden bepaalt.",
   },
   {
     question: "Zit ik vast aan één vast maandbedrag?",
@@ -22,9 +22,9 @@ export const FAQ_ITEMS: FaqItem[] = [
       "Een glazen dak (helder) zorgt voor maximale lichtinval en een premium uitstraling. Een polycarbonaat dak (opaal of helder) is lichter van gewicht en biedt een voordelige prijs-kwaliteitverhouding. Beide opties zijn te kiezen in de configurator.",
   },
   {
-    question: "Hoe wordt de indicatieve prijs in de configurator berekend?",
+    question: "Hoe wordt de prijs in de configurator berekend?",
     answer:
-      "De configurator berekent een indicatieve richtprijs op basis van uw keuzes, zoals afmetingen, dakmateriaal, schuifwanden, zijwanden, screens en ledverlichting. Dit is een marketing-indicatie; de definitieve prijs volgt uit een offerte op maat.",
+      "De configurator berekent de richtprijs op basis van uw keuzes, zoals afmetingen, dakmateriaal, schuifwanden, zijwanden, screens en ledverlichting. De definitieve offerte volgt na het adviesgesprek en het inmeten op locatie.",
   },
   {
     question: "Kan ik de veranda volledig afsluiten?",

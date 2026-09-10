@@ -4,7 +4,7 @@ import Configurator from "@/components/Configurator";
 export const metadata: Metadata = {
   title: "Configurator",
   description:
-    "Stel uw LivinXL Vista veranda samen en bekijk direct een indicatieve prijs en financieringsmogelijkheden.",
+    "Stel uw LivinXL Vista veranda samen en bekijk direct de prijs en financieringsmogelijkheden.",
 };
 
 export default function ConfiguratorPage() {
@@ -16,8 +16,8 @@ export default function ConfiguratorPage() {
           Stel uw LivinXL Vista samen
         </h1>
         <p className="mt-4 text-base leading-relaxed text-anthracite-500">
-          Kies afmetingen, materialen en opties en bekijk direct een indicatieve richtprijs met
-          bijbehorend maandbedrag. Vraag daarna vrijblijvend een offerte aan.
+          Kies afmetingen, materialen en opties en bekijk direct de richtprijs met bijbehorend
+          indicatief maandbedrag. Vraag daarna vrijblijvend een offerte aan.
         </p>
       </div>
 

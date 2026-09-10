@@ -8,7 +8,6 @@ const NAV_LINKS = [
   { href: "/product/vista", label: "LivinXL Vista" },
   { href: "/projecten", label: "Projecten" },
   { href: "/werkwijze", label: "Werkwijze" },
-  { href: "/financiering", label: "Betaal in termijnen" },
   { href: "/dealer-worden", label: "Dealer worden" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },

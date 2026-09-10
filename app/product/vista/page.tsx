@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import SectionHeading from "@/components/SectionHeading";
-import VerandaIllustration from "@/components/VerandaIllustration";
 import CtaBanner from "@/components/CtaBanner";
 import { FRAME_COLORS } from "@/lib/pricing";
 import {
@@ -83,15 +83,22 @@ export default function VistaPage() {
             </Link>
           </div>
           <Link
-            href="/financiering"
+            href="/#termijnbetaling"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-copper-50 px-4 py-2 text-sm font-semibold text-copper-600 transition-colors hover:bg-copper-100"
           >
             <IconCoins className="h-4 w-4" />
             Betaal uw Vista in termijnen tot 180 maanden
           </Link>
         </div>
-        <div className="overflow-hidden rounded-2xl shadow-soft">
-          <VerandaIllustration className="w-full" schuifwanden={3} zijwand led screens={1} />
+        <div className="relative aspect-[1483/1061] w-full overflow-hidden rounded-2xl shadow-soft">
+          <Image
+            src="/vistaheader.png"
+            alt="LivinXL Vista veranda met loungeset, aangebouwd aan een woning"
+            fill
+            priority
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover"
+          />
         </div>
       </section>
 

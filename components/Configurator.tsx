@@ -353,7 +353,7 @@ export default function Configurator() {
             </span>
           </div>
           <p className="mt-1 text-xs text-anthracite-400">
-            {prijsLoading ? "Prijs wordt herberekend..." : "Indicatief, inclusief montage"}
+            {prijsLoading ? "Prijs wordt herberekend..." : "Inclusief montage"}
           </p>
 
           <ul className="mt-5 space-y-2 border-t border-anthracite-700/8 pt-5">
