@@ -119,12 +119,6 @@ function buildOfferteSpecs(configuratie: ConfiguratieSummary | null) {
   ];
 }
 
-function genereerOfferteNummer(): string {
-  const jaar = new Date().getFullYear();
-  const volgnummer = Math.floor(1000 + Math.random() * 9000);
-  return `LX-${jaar}-${volgnummer}`;
-}
-
 export default function QuoteForm() {
   const configuratie = useConfiguratieFromQuery();
   const [form, setForm] = useState<FormState>(initialState);
@@ -157,15 +151,19 @@ export default function QuoteForm() {
       const res = await fetch("/api/offerte", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          configuratieLines: configuratie?.lines ?? [],
+          prijs: configuratie?.prijs ?? null,
+          maandbedrag: configuratie?.maandbedrag ?? null,
+          looptijd: configuratie?.looptijd ?? null,
+        }),
       });
       if (!res.ok) throw new Error("submit failed");
+      const data: { offerteNummer: string; datum: string } = await res.json();
 
       setSubmitted(form);
-      setOfferteMeta({
-        nummer: genereerOfferteNummer(),
-        datum: new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" }),
-      });
+      setOfferteMeta({ nummer: data.offerteNummer, datum: data.datum });
       setStatus("success");
       setForm(initialState);
     } catch {

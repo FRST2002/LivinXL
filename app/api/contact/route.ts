@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendContactEmail } from "@/lib/server/email";
 
 export async function POST(request: NextRequest) {
   const data = await request.json().catch(() => null);
@@ -7,13 +8,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Ongeldige aanvraag" }, { status: 400 });
   }
 
+  const body = data as Record<string, unknown>;
+
   const required = ["naam", "email", "bericht"];
-  const missing = required.filter((field) => !String((data as Record<string, unknown>)[field] ?? "").trim());
+  const missing = required.filter((field) => !String(body[field] ?? "").trim());
 
   if (missing.length > 0) {
     return NextResponse.json({ ok: false, error: `Ontbrekende velden: ${missing.join(", ")}` }, { status: 400 });
   }
 
-  // In een productieomgeving zou het bericht hier worden doorgezet naar het contactteam.
+  try {
+    await sendContactEmail({
+      naam: String(body.naam),
+      email: String(body.email),
+      telefoon: String(body.telefoon ?? ""),
+      onderwerp: String(body.onderwerp ?? "Algemene vraag"),
+      bericht: String(body.bericht),
+    });
+  } catch (error) {
+    console.error("Kon contact-e-mail niet versturen:", error);
+  }
+
   return NextResponse.json({ ok: true });
 }

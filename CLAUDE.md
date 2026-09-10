@@ -68,13 +68,23 @@ reads these query params (`useSearchParams`, hence the page wraps it in `<Suspen
 renders a full on-screen "offerte" (quote) document (customer details, configuration, total price, monthly
 payment — interest is intentionally never shown here) with an "Offerte opslaan" button that calls
 `window.print()`. Printing is scoped to just the quote via Tailwind's `print:hidden` utility on `Header`,
-`Footer`, and the page's intro section — there is no PDF library involved.
+`Footer`, and the page's intro section — there is no PDF library involved. The offerte number/date shown
+to the customer is generated **server-side** in `app/api/offerte/route.ts` and returned in the response
+(`QuoteForm` uses that value, it does not generate its own) — this keeps it identical to the number used
+in the internal notification email described below.
 
-### Forms are validate-only stubs
+### Forms validate, then (for offerte/contact) email the team via Resend
 
-`components/{QuoteForm,ContactForm,DealerForm}.tsx` POST to `app/api/{offerte,contact,dealer}/route.ts`.
-Each route only checks required fields are present and returns `{ok:true}` — there is no email or CRM
-integration yet. No environment variables or database are involved anywhere in this app.
+`components/{QuoteForm,ContactForm,DealerForm}.tsx` POST to `app/api/{offerte,contact,dealer}/route.ts`,
+which validate required fields and return `{ok:true}` (offerte also returns `{offerteNummer, datum}`).
+The offerte and contact routes additionally call `lib/server/email.ts` (`sendOfferteEmail` /
+`sendContactEmail`), which uses the `resend` package to email the full submission — for offerte, this
+includes the customer's details, the configuration summary, and the price/monthly payment, i.e. the same
+content the customer sees in their on-screen offerte — to `RESEND_TO_EMAIL` (default `info@livinxl.nl`).
+This requires a `RESEND_API_KEY` environment variable (see `.env.example`); if it's unset, `getClient()`
+returns `null` and the email is silently skipped — forms still succeed for the customer either way, and
+email failures are caught and logged, never surfaced as a form error. `/dealer-worden` has no email
+integration yet. No database is involved anywhere in this app.
 
 ### Styling
 
