@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SectionHeading from "@/components/SectionHeading";
 import CtaBanner from "@/components/CtaBanner";
-import { IconArrowRight } from "@/components/icons";
+import { IconArrowRight, IconCheck } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Projecten",
@@ -99,8 +99,12 @@ export default function ProjectenPage() {
         <SectionHeading
           eyebrow="Projecten"
           title="Door ons geleverd en gemonteerd"
-          description="Een impressie van LivinXL Vista veranda's bij onze klanten thuis: verschillende afmetingen, daksoorten, kleuren en indelingen. Iedere veranda wordt op maat ontworpen voor de specifieke situatie."
+          description="Een impressie van LivinXL Vista veranda's bij onze klanten thuis: verschillende afmetingen, daksoorten, kleuren en indelingen. Iedere veranda wordt op maat ontworpen voor de specifieke situatie. Onderstaande selectie is slechts een greep uit ons werk."
         />
+        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-copper-50 px-4 py-2 text-sm font-semibold text-copper-600">
+          <IconCheck className="h-4 w-4" />
+          50+ projecten gerealiseerd in Nederland en België
+        </div>
       </section>
 
       <section className="container-page pb-16 sm:pb-24">
