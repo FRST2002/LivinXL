@@ -23,7 +23,7 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-anthracite-700/10 bg-anthracite-700 text-offwhite-200">
+    <footer className="border-t border-anthracite-700/10 bg-anthracite-700 text-offwhite-200 print:hidden">
       <div className="container-page grid grid-cols-1 gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-2">
           <span className="text-2xl font-extrabold tracking-tightest text-white">

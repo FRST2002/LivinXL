@@ -28,7 +28,10 @@ Open vervolgens [http://localhost:3000](http://localhost:3000).
 
 ## Belangrijkste logica
 
-- `lib/pricing.ts` — configuratie-opties en het prijsmodel (indicatieve richtprijs € 7.000 – € 12.000)
+- `lib/pricing.ts` — configuratie-opties (afmetingen, dakmateriaal, kleuren, posities)
+- `lib/server/verandaPrijzen.ts` — de daadwerkelijke prijsberekening (verkoopprijs = 200% van de inkoopprijs). Dit
+  bestand mag nooit vanuit een "use client"-component worden geïmporteerd; alleen
+  `app/api/prijs/route.ts` roept het aan, zodat inkoopprijzen nooit in de browser terechtkomen.
 - `lib/finance.ts` — annuïtaire berekening (standaard 7% indicatieve jaarrente, looptijd tot 180 maanden)
 
 De formulieren (`/offerte`, `/dealer-worden`, `/contact`) posten naar eenvoudige API-routes

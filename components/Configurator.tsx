@@ -2,66 +2,74 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CONFIGURATOR_DEFAULTS,
   ConfiguratorState,
   FRAME_COLORS,
   LIMITS,
-  PRICE_MAX,
-  PRICE_MIN,
   PositionOption,
   ROOF_MATERIALS,
   SCHUIFWAND_POSITIONS,
   SCREEN_POSITIONS,
   ZIJWAND_POSITIONS,
-  calculatePrice,
   configuratorStateToQuery,
   describeConfiguration,
 } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/finance";
 import FinancingCalculator from "@/components/FinancingCalculator";
-import { IconBulb, IconFlame, IconLayers, IconRoof, IconRuler, IconScreen, IconWall } from "@/components/icons";
+import { IconBulb, IconLayers, IconRoof, IconRuler, IconScreen, IconWall } from "@/components/icons";
 
-function Stepper({
-  value,
-  min,
-  max,
-  onChange,
-  suffix,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  onChange: (value: number) => void;
-  suffix?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        onClick={() => onChange(Math.max(min, value - 1))}
-        disabled={value <= min}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-anthracite-700/15 text-lg font-semibold text-anthracite-700 disabled:opacity-30"
-        aria-label="Verminderen"
-      >
-        &minus;
-      </button>
-      <span className="w-16 text-center text-base font-semibold text-anthracite-700">
-        {value}
-        {suffix ? ` ${suffix}` : ""}
-      </span>
-      <button
-        type="button"
-        onClick={() => onChange(Math.min(max, value + 1))}
-        disabled={value >= max}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-anthracite-700/15 text-lg font-semibold text-anthracite-700 disabled:opacity-30"
-        aria-label="Vermeerderen"
-      >
-        +
-      </button>
-    </div>
-  );
+/** Debounced price lookup: the actual purchase-price data lives server-side only (see app/api/prijs). */
+function usePrijs(state: ConfiguratorState) {
+  const [prijs, setPrijs] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    const timeout = setTimeout(() => {
+      fetch("/api/prijs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          width: state.width,
+          depth: state.depth,
+          roofMaterial: state.roofMaterial,
+          schuifwanden: state.schuifwanden,
+          zijwanden: state.zijwanden,
+          screens: state.screens,
+          ledverlichting: state.ledverlichting,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data: { prijs?: number }) => {
+          if (!cancelled && typeof data.prijs === "number") {
+            setPrijs(data.prijs);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [
+    state.width,
+    state.depth,
+    state.roofMaterial,
+    state.schuifwanden,
+    state.zijwanden,
+    state.screens,
+    state.ledverlichting,
+  ]);
+
+  return { prijs, loading };
 }
 
 function PositionToggles<T extends string>({
@@ -109,10 +117,12 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 rounded-full transition-colors ${checked ? "bg-copper" : "bg-anthracite-700/15"}`}
+      className={`relative h-7 w-12 shrink-0 overflow-hidden rounded-full transition-colors ${
+        checked ? "bg-copper" : "bg-anthracite-700/15"
+      }`}
     >
       <span
-        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+        className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
           checked ? "translate-x-6" : "translate-x-1"
         }`}
       />
@@ -122,12 +132,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function Configurator() {
   const [state, setState] = useState<ConfiguratorState>(CONFIGURATOR_DEFAULTS);
+  const [financing, setFinancing] = useState<{ monthlyPayment: number; termMonths: number } | null>(null);
+  const { prijs, loading: prijsLoading } = usePrijs(state);
 
-  const priceResult = useMemo(() => calculatePrice(state), [state]);
   const summaryLines = useMemo(() => describeConfiguration(state), [state]);
   const offerteHref = useMemo(
-    () => `/offerte?${configuratorStateToQuery(state, priceResult.price)}`,
-    [state, priceResult.price]
+    () => `/offerte?${configuratorStateToQuery(state, prijs ?? 0, financing ?? undefined)}`,
+    [state, prijs, financing]
   );
 
   function update<K extends keyof ConfiguratorState>(key: K, value: ConfiguratorState[K]) {
@@ -300,23 +311,12 @@ export default function Configurator() {
                   options={SCREEN_POSITIONS}
                   onChange={(v) => update("screens", v)}
                 />
+                {state.screens.length > 0 && (
+                  <p className="mt-2 text-xs text-anthracite-400">
+                    Standaard antraciet doek. Wilt u een andere kleur? Geef dit aan bij uw offerteaanvraag.
+                  </p>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 py-4">
-              <div className="flex items-center gap-3">
-                <IconFlame className="h-5 w-5 text-copper" />
-                <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Infrarood verwarming</p>
-                  <p className="text-xs text-anthracite-400">Aantal verwarmingselementen</p>
-                </div>
-              </div>
-              <Stepper
-                value={state.verwarming}
-                min={LIMITS.verwarming.min}
-                max={LIMITS.verwarming.max}
-                onChange={(v) => update("verwarming", v)}
-              />
             </div>
 
             <div className="flex items-center justify-between gap-4 py-4">
@@ -331,6 +331,19 @@ export default function Configurator() {
             </div>
           </div>
         </div>
+
+        {/* Mobile/tablet CTA: the summary card is only sticky from xl upward, so repeat the CTA here */}
+        <div className="card flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between xl:hidden">
+          <div>
+            <p className="text-xs text-anthracite-400">Uw indicatieve richtprijs</p>
+            <p className={`text-2xl font-extrabold tracking-tightest text-anthracite-700 ${prijsLoading ? "opacity-50" : ""}`}>
+              {prijs != null ? formatCurrency(prijs) : "..."}
+            </p>
+          </div>
+          <Link href={offerteHref} className="btn-primary w-full shrink-0 sm:w-auto">
+            Vraag offerte aan voor deze configuratie
+          </Link>
+        </div>
       </div>
 
       {/* Right: sticky summary + financing */}
@@ -338,12 +351,12 @@ export default function Configurator() {
         <div className="card p-6 sm:p-8">
           <span className="eyebrow">Uw configuratie</span>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-4xl font-extrabold tracking-tightest text-anthracite-700">
-              {formatCurrency(priceResult.price)}
+            <span className={`text-4xl font-extrabold tracking-tightest text-anthracite-700 ${prijsLoading ? "opacity-50" : ""}`}>
+              {prijs != null ? formatCurrency(prijs) : "..."}
             </span>
           </div>
           <p className="mt-1 text-xs text-anthracite-400">
-            Indicatieve richtprijs tussen {formatCurrency(PRICE_MIN)} en {formatCurrency(PRICE_MAX)}, inclusief montage
+            {prijsLoading ? "Prijs wordt herberekend..." : "Indicatief, inclusief montage"}
           </p>
 
           <ul className="mt-5 space-y-2 border-t border-anthracite-700/8 pt-5">
@@ -365,11 +378,10 @@ export default function Configurator() {
         </div>
 
         <FinancingCalculator
-          amount={priceResult.price}
-          minAmount={PRICE_MIN}
-          maxAmount={PRICE_MAX}
+          amount={prijs ?? 0}
           compact
           showInterest={false}
+          onChange={(change) => setFinancing({ monthlyPayment: change.monthlyPayment, termMonths: change.termMonths })}
         />
       </div>
     </div>

@@ -24,7 +24,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Hoe wordt de indicatieve prijs in de configurator berekend?",
     answer:
-      "De configurator berekent een indicatieve richtprijs tussen € 7.000 en € 12.000 op basis van uw keuzes, zoals afmetingen, dakmateriaal, schuifwanden, zijwanden, screens, verwarming en ledverlichting. Dit is een marketing-indicatie; de definitieve prijs volgt uit een offerte op maat.",
+      "De configurator berekent een indicatieve richtprijs op basis van uw keuzes, zoals afmetingen, dakmateriaal, schuifwanden, zijwanden, screens en ledverlichting. Dit is een marketing-indicatie; de definitieve prijs volgt uit een offerte op maat.",
   },
   {
     question: "Kan ik de veranda volledig afsluiten?",

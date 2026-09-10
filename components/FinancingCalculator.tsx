@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_ANNUAL_RATE,
   MAX_TERM_MONTHS,
@@ -9,6 +9,13 @@ import {
   formatCurrency,
   formatCurrencyPrecise,
 } from "@/lib/finance";
+
+export interface FinancingCalculatorChange {
+  principal: number;
+  downPayment: number;
+  termMonths: number;
+  monthlyPayment: number;
+}
 
 type Props = {
   amount: number;
@@ -21,6 +28,8 @@ type Props = {
   compact?: boolean;
   /** Show the total interest cost line. Off by default in the configurator, where only the monthly payment matters. */
   showInterest?: boolean;
+  /** Reports the current selection (term, down payment, resulting monthly payment) whenever it changes. */
+  onChange?: (change: FinancingCalculatorChange) => void;
 };
 
 function formatTerm(months: number): string {
@@ -40,6 +49,7 @@ export default function FinancingCalculator({
   className,
   compact = false,
   showInterest = true,
+  onChange,
 }: Props) {
   const [downPayment, setDownPayment] = useState(0);
   const [termMonths, setTermMonths] = useState(120);
@@ -51,6 +61,18 @@ export default function FinancingCalculator({
     () => calculateAnnuity(principal, DEFAULT_ANNUAL_RATE, termMonths),
     [principal, termMonths]
   );
+
+  useEffect(() => {
+    onChange?.({
+      principal,
+      downPayment: clampedDownPayment,
+      termMonths,
+      monthlyPayment: result.monthlyPayment,
+    });
+    // onChange is intentionally excluded: parents pass a new function each render,
+    // and we only want to report when the actual calculation changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [principal, clampedDownPayment, termMonths, result.monthlyPayment]);
 
   return (
     <div className={`card p-6 sm:p-8 ${className ?? ""}`}>

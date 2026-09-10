@@ -8,7 +8,6 @@ import {
   IconArrowRight,
   IconBulb,
   IconCoins,
-  IconFlame,
   IconLayers,
   IconRoof,
   IconScreen,
@@ -18,7 +17,7 @@ import {
 export const metadata: Metadata = {
   title: "LivinXL Vista",
   description:
-    "De LivinXL Vista is onze aluminium veranda op maat: glas of polycarbonaat dak, glazen schuifwanden, zijwanden, ledverlichting, screens en verwarming.",
+    "De LivinXL Vista is onze aluminium veranda op maat: glas of polycarbonaat dak, glazen schuifwanden, zijwanden, ledverlichting en screens.",
 };
 
 const OPTIONS = [
@@ -49,11 +48,6 @@ const OPTIONS = [
     title: "Screens",
     description: "Elektrisch bediende screens houden de veranda koel en beschermen tegen felle zon.",
   },
-  {
-    icon: IconFlame,
-    title: "Verwarming",
-    description: "Infrarood verwarmingselementen maken de veranda ook in de koelere maanden goed bruikbaar.",
-  },
 ];
 
 const SPECS = [
@@ -76,7 +70,7 @@ export default function VistaPage() {
           </h1>
           <p className="mt-6 max-w-lg text-base leading-relaxed text-anthracite-500 sm:text-lg">
             De LivinXL Vista is onze aluminium veranda op maat. Strak, architectonisch en volledig
-            samen te stellen: van dakmateriaal tot verwarming, zodat de veranda past bij uw woning
+            samen te stellen: van dakmateriaal tot verlichting, zodat de veranda past bij uw woning
             en uw manier van buiten leven.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

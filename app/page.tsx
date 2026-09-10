@@ -11,7 +11,6 @@ import {
   IconCheck,
   IconCoins,
   IconCompass,
-  IconFlame,
   IconLayers,
   IconLeaf,
   IconRoof,
@@ -43,7 +42,7 @@ const WHY_LIVINXL = [
   {
     icon: IconShield,
     title: "Transparante indicatieve prijzen",
-    body: "De configurator geeft direct een indicatieve richtprijs tussen € 7.000 en € 12.000. De definitieve offerte volgt op basis van uw exacte configuratie.",
+    body: "De configurator geeft direct een indicatieve richtprijs op basis van uw configuratie. De definitieve offerte volgt na het adviesgesprek en inmeten.",
   },
   {
     icon: IconCoins,
@@ -63,7 +62,6 @@ const FEATURES = [
   { icon: IconWall, title: "Zijwanden", description: "Extra beschutting tegen wind met dichte aluminium panelen." },
   { icon: IconBulb, title: "Ledverlichting", description: "Sfeervolle verlichting geïntegreerd in het dakprofiel." },
   { icon: IconScreen, title: "Screens", description: "Elektrische zonwering houdt de veranda koel en comfortabel." },
-  { icon: IconFlame, title: "Verwarming", description: "Infrarood verwarming voor gebruik in de koelere maanden." },
 ];
 
 const PROCESS = [
@@ -191,9 +189,7 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-anthracite-400">
-            Indicatieve richtprijs tussen <span className="font-semibold text-anthracite-600">€ 7.000</span> en{" "}
-            <span className="font-semibold text-anthracite-600">€ 12.000</span>, inclusief montage — desgewenst
-            te betalen in termijnen.{" "}
+            Indicatieve richtprijs, inclusief montage — desgewenst te betalen in termijnen.{" "}
             <Link href="/financiering" className="font-semibold text-copper hover:text-copper-600">
               Bereken uw maandbedrag
             </Link>

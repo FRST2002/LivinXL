@@ -79,7 +79,6 @@ export interface ConfiguratorState {
   zijwanden: ZijwandPosition[];
   ledverlichting: boolean;
   screens: SidePosition[];
-  verwarming: number; // 0 - 2 infrarood units
 }
 
 export const CONFIGURATOR_DEFAULTS: ConfiguratorState = {
@@ -91,67 +90,12 @@ export const CONFIGURATOR_DEFAULTS: ConfiguratorState = {
   zijwanden: [],
   ledverlichting: true,
   screens: [],
-  verwarming: 0,
 };
 
 export const LIMITS = {
   width: { min: 300, max: 700, step: 10 },
   depth: { min: 250, max: 500, step: 10 },
-  verwarming: { min: 0, max: 2, step: 1 },
 };
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
-}
-
-interface PriceBreakdownItem {
-  label: string;
-  weight: number;
-  score: number;
-}
-
-export interface PriceResult {
-  price: number;
-  min: number;
-  max: number;
-  breakdown: PriceBreakdownItem[];
-}
-
-/**
- * Indicative pricing model. Every option contributes a weighted 0-1 score;
- * the weighted sum is mapped onto the indicative range of PRICE_MIN - PRICE_MAX.
- * This is a marketing estimate, not a quotation.
- */
-export function calculatePrice(state: ConfiguratorState): PriceResult {
-  const areaScore = clamp01(
-    ((state.width - LIMITS.width.min) / (LIMITS.width.max - LIMITS.width.min)) * 0.5 +
-      ((state.depth - LIMITS.depth.min) / (LIMITS.depth.max - LIMITS.depth.min)) * 0.5
-  );
-
-  const roofScore =
-    state.roofMaterial === "polycarbonaat-opaal" ? 0 : state.roofMaterial === "polycarbonaat-helder" ? 0.4 : 1;
-  const schuifwandenScore = clamp01(state.schuifwanden.length / SCHUIFWAND_POSITIONS.length);
-  const zijwandenScore = clamp01(state.zijwanden.length / ZIJWAND_POSITIONS.length);
-  const screensScore = clamp01(state.screens.length / SCREEN_POSITIONS.length);
-  const verwarmingScore = clamp01(state.verwarming / LIMITS.verwarming.max);
-  const ledScore = state.ledverlichting ? 1 : 0;
-
-  const breakdown: PriceBreakdownItem[] = [
-    { label: "Afmetingen", weight: 0.3, score: areaScore },
-    { label: "Dakmateriaal", weight: 0.2, score: roofScore },
-    { label: "Glazen schuifwanden", weight: 0.2, score: schuifwandenScore },
-    { label: "Zijwanden", weight: 0.1, score: zijwandenScore },
-    { label: "Screens", weight: 0.1, score: screensScore },
-    { label: "Verwarming", weight: 0.06, score: verwarmingScore },
-    { label: "Ledverlichting", weight: 0.04, score: ledScore },
-  ];
-
-  const weightedScore = breakdown.reduce((sum, item) => sum + item.weight * item.score, 0);
-  const rawPrice = PRICE_MIN + weightedScore * (PRICE_MAX - PRICE_MIN);
-  const price = Math.min(PRICE_MAX, Math.max(PRICE_MIN, Math.round(rawPrice / 50) * 50));
-
-  return { price, min: PRICE_MIN, max: PRICE_MAX, breakdown };
-}
 
 export function describeConfiguration(state: ConfiguratorState): string[] {
   const color = FRAME_COLORS.find((c) => c.id === state.frameColor);
@@ -173,14 +117,26 @@ export function describeConfiguration(state: ConfiguratorState): string[] {
     const labels = SCREEN_POSITIONS.filter((p) => state.screens.includes(p.id)).map((p) => p.label);
     lines.push(`Screens: ${labels.join(", ")}`);
   }
-  if (state.verwarming > 0) lines.push(`Infrarood verwarming: ${state.verwarming}`);
   if (state.ledverlichting) lines.push("Ledverlichting: ja");
   return lines;
 }
 
-export function configuratorStateToQuery(state: ConfiguratorState, price: number): string {
+export interface FinancingSelection {
+  monthlyPayment: number;
+  termMonths: number;
+}
+
+export function configuratorStateToQuery(
+  state: ConfiguratorState,
+  price: number,
+  financing?: FinancingSelection
+): string {
   const params = new URLSearchParams();
   params.set("prijs", String(price));
   params.set("samenvatting", describeConfiguration(state).join(" | "));
+  if (financing) {
+    params.set("maandbedrag", String(Math.round(financing.monthlyPayment)));
+    params.set("looptijd", String(financing.termMonths));
+  }
   return params.toString();
 }

@@ -23,7 +23,7 @@ export default function Header() {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-anthracite-700/8 bg-offwhite/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-anthracite-700/8 bg-offwhite/90 backdrop-blur print:hidden">
       <div className="container-page flex h-20 items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl font-extrabold tracking-tightest text-anthracite-700">
@@ -52,7 +52,7 @@ export default function Header() {
           <Link href="/configurator" className="btn-ghost">
             Configurator
           </Link>
-          <Link href="/offerte" className="btn-primary">
+          <Link href="/configurator" className="btn-primary">
             Offerte aanvragen
           </Link>
         </div>
@@ -93,7 +93,7 @@ export default function Header() {
               <Link href="/configurator" className="btn-ghost w-full">
                 Configurator
               </Link>
-              <Link href="/offerte" className="btn-primary w-full">
+              <Link href="/configurator" className="btn-primary w-full">
                 Offerte aanvragen
               </Link>
             </div>
