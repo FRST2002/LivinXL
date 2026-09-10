@@ -336,22 +336,18 @@ export default function Configurator() {
       <div className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
         <div className="card p-6 sm:p-8">
           <span className="eyebrow">Uw configuratie</span>
-          <div className="relative mt-3">
-            <div className="flex items-end gap-2">
-              <span
-                aria-hidden="true"
-                className={`select-none text-4xl font-extrabold tracking-tightest text-anthracite-700 blur-md ${prijsLoading ? "opacity-50" : ""}`}
-              >
-                {prijs != null ? formatCurrency(prijs) : formatCurrency(0)}
-              </span>
-            </div>
-            <div className="absolute inset-0 flex items-center">
-              <div className="flex items-center gap-2 rounded-full bg-copper-50 px-3 py-1.5">
-                <IconLock className="h-4 w-4 shrink-0 text-copper-600" />
-                <span className="text-xs font-semibold text-copper-600">Vraag een offerte aan om uw prijs te zien</span>
-              </div>
-            </div>
+          <div className="mt-3 flex items-end gap-2">
+            <span
+              aria-hidden="true"
+              className={`select-none text-4xl font-extrabold tracking-tightest text-anthracite-700 blur-md ${prijsLoading ? "opacity-50" : ""}`}
+            >
+              {prijs != null ? formatCurrency(prijs) : formatCurrency(0)}
+            </span>
           </div>
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-copper-600">
+            <IconLock className="h-3.5 w-3.5 shrink-0" />
+            Vraag een offerte aan om uw prijs te zien
+          </p>
           <p className="mt-1 text-xs text-anthracite-400">Inclusief montage</p>
 
           <ul className="mt-5 space-y-2 border-t border-anthracite-700/8 pt-5">

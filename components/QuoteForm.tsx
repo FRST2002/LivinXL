@@ -406,21 +406,15 @@ export default function QuoteForm() {
             </ul>
           )}
           {configuratie.prijs != null && (
-            <div className="relative mt-5 inline-flex items-center border-t border-anthracite-700/8 pt-5">
-              <div>
-                <p className="text-xs text-anthracite-400">Totaalbedrag veranda</p>
-                <p aria-hidden="true" className="select-none text-lg font-bold text-anthracite-700 blur-md">
-                  {formatCurrency(configuratie.prijs)}
-                </p>
-              </div>
-              <div className="absolute inset-x-0 bottom-0 flex items-center pb-1">
-                <div className="flex items-center gap-1.5 rounded-full bg-copper-50 px-3 py-1 whitespace-nowrap">
-                  <IconLock className="h-3.5 w-3.5 shrink-0 text-copper-600" />
-                  <span className="text-[11px] font-semibold text-copper-600">
-                    Zichtbaar na het versturen hieronder
-                  </span>
-                </div>
-              </div>
+            <div className="mt-5 border-t border-anthracite-700/8 pt-5">
+              <p className="text-xs text-anthracite-400">Totaalbedrag veranda</p>
+              <p aria-hidden="true" className="select-none text-lg font-bold text-anthracite-700 blur-md">
+                {formatCurrency(configuratie.prijs)}
+              </p>
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-copper-600">
+                <IconLock className="h-3.5 w-3.5 shrink-0" />
+                Zichtbaar na het versturen hieronder
+              </p>
             </div>
           )}
         </div>
