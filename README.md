@@ -23,7 +23,7 @@ Open vervolgens [http://localhost:3000](http://localhost:3000).
 - `/contact` — Contactformulier
 - `/faq` — Veelgestelde vragen
 - `/offerte` — Offerteformulier (neemt configuratie over vanuit de configurator)
-- `/configurator` — Werkende verandaconfigurator met live prijsindicatie en financiering
+- `/configurator` — Werkende verandaconfigurator; de prijs is vertroebeld totdat een offerte is aangevraagd
 
 ## Belangrijkste logica
 

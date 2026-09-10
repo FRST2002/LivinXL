@@ -60,13 +60,11 @@ export interface OfferteEmailInput {
   opmerkingen: string;
   configuratieLines: string[];
   prijs: number | null;
-  maandbedrag: number | null;
-  looptijd: number | null;
 }
 
 export async function sendOfferteEmail(input: OfferteEmailInput): Promise<void> {
   const client = getClient();
-  if (!client) return; // RESEND_API_KEY not configured — skip silently, don't block the form.
+  if (!client) return; // RESEND_KEY_LIVINXL not configured — skip silently, don't block the form.
 
   const klantRows = [
     row("Naam", escapeHtml(input.naam)),
@@ -86,21 +84,7 @@ export async function sendOfferteEmail(input: OfferteEmailInput): Promise<void> 
 
   const prijsHtml =
     input.prijs != null
-      ? `
-        <table style="margin-top: 8px;">
-          ${row("Totaalbedrag veranda", `<strong>${formatCurrency(input.prijs)}</strong>`)}
-          ${
-            input.maandbedrag != null
-              ? row(
-                  "Maandbedrag (indicatief)",
-                  `<strong>${formatCurrency(input.maandbedrag)}</strong> / mnd${
-                    input.looptijd ? ` &middot; looptijd ${input.looptijd} mnd` : ""
-                  }`
-                )
-              : ""
-          }
-        </table>
-      `
+      ? `<table style="margin-top: 8px;">${row("Totaalbedrag veranda", `<strong>${formatCurrency(input.prijs)}</strong>`)}</table>`
       : "";
 
   const opmerkingenHtml = input.opmerkingen

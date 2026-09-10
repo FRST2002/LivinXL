@@ -55,23 +55,38 @@ places with different props: the homepage (`FinancingStandalone`, amount is user
 `onAmountChange`), and inside `Configurator` (`compact`, amount fixed to the configurator's calculated
 price). It never shows interest cost — only the monthly payment — anywhere on the site. It accepts an
 optional `onChange` callback that reports the current
-`{ principal, downPayment, termMonths, monthlyPayment }` whenever the calculation changes — this is how
-`Configurator` captures the customer's chosen monthly payment to forward to the offerte flow, without lifting
-the calculator's internal state up.
+`{ principal, downPayment, termMonths, monthlyPayment }` whenever the calculation changes.
+
+### Price is deliberately blurred until a customer submits an offerte (lead-gen gate)
+
+This is intentional product behavior, not a bug: `Configurator` never renders `FinancingCalculator` at
+all, and blurs its own price number (`blur-md` + a copper "Vraag een offerte aan om uw prijs te zien"
+pill overlaid via `IconLock`) — the price is still computed and present in the DOM (via `usePrijs`), just
+visually obscured, so this is a soft/marketing gate, not real data protection (unlike the purchase-price
+hiding described above, which is a hard requirement). `QuoteForm`'s pre-submission "your configuration"
+preview blurs the price the same way. The reasoning (per the person who owns this site): the monthly
+payment isn't meaningful to LivinXL itself since the financier decides real terms anyway, so there's no
+downside to only letting customers explore it *after* they've left contact details — every visitor who
+wants a number has to submit the lead form first. The homepage/`#termijnbetaling` calculator
+(`FinancingStandalone`) is deliberately **not** gated — it's a generic trust-building tool untied to any
+specific configuration, so gating it wouldn't make sense.
 
 ### Configurator → offerte data flow
 
-`Configurator` (`/configurator`) builds an `/offerte?...` link via `configuratorStateToQuery`, carrying the
-price, a human-readable config summary, and the selected monthly payment/term. `QuoteForm.tsx` (`/offerte`)
-reads these query params (`useSearchParams`, hence the page wraps it in `<Suspense>`) to show a read-only
-"your configuration" preview before submission. After a customer submits their contact details, `QuoteForm`
-renders a full on-screen "offerte" (quote) document (customer details, configuration, total price, monthly
-payment — interest is intentionally never shown here) with an "Offerte opslaan" button that calls
-`window.print()`. Printing is scoped to just the quote via Tailwind's `print:hidden` utility on `Header`,
-`Footer`, and the page's intro section — there is no PDF library involved. The offerte number/date shown
-to the customer is generated **server-side** in `app/api/offerte/route.ts` and returned in the response
-(`QuoteForm` uses that value, it does not generate its own) — this keeps it identical to the number used
-in the internal notification email described below.
+`Configurator` (`/configurator`) builds an `/offerte?...` link via `configuratorStateToQuery`, carrying
+the price, a human-readable config summary, and width/depth. `QuoteForm.tsx` (`/offerte`) reads these
+query params (`useSearchParams`, hence the page wraps it in `<Suspense>`) to show a read-only, still-
+blurred "your configuration" preview before submission. After a customer submits their contact details,
+`QuoteForm` renders a full on-screen "offerte" (quote) document — customer details, configuration, total
+price now unblurred — followed by a live, interactive `FinancingCalculator` so the customer can shape
+their own monthly payment (interest is intentionally never shown anywhere in this flow). An "Offerte
+opslaan" button calls `window.print()`; printing is scoped to just the quote via Tailwind's `print:hidden`
+utility on `Header`, `Footer`, and the page's intro section — there is no PDF library involved. Since the
+live calculator's sliders don't make sense on paper, they're `print:hidden` and a static one-line summary
+of the customer's current selection (`hidden print:block`) takes their place when printing. The offerte
+number/date shown to the customer is generated **server-side** in `app/api/offerte/route.ts` and returned
+in the response (`QuoteForm` uses that value, it does not generate its own) — this keeps it identical to
+the number used in the internal notification email described below.
 
 ### Forms validate, then (for offerte/contact) email the team via Resend
 

@@ -121,24 +121,11 @@ export function describeConfiguration(state: ConfiguratorState): string[] {
   return lines;
 }
 
-export interface FinancingSelection {
-  monthlyPayment: number;
-  termMonths: number;
-}
-
-export function configuratorStateToQuery(
-  state: ConfiguratorState,
-  price: number,
-  financing?: FinancingSelection
-): string {
+export function configuratorStateToQuery(state: ConfiguratorState, price: number): string {
   const params = new URLSearchParams();
   params.set("prijs", String(price));
   params.set("breedte", String(state.width));
   params.set("diepte", String(state.depth));
   params.set("samenvatting", describeConfiguration(state).join(" | "));
-  if (financing) {
-    params.set("maandbedrag", String(Math.round(financing.monthlyPayment)));
-    params.set("looptijd", String(financing.termMonths));
-  }
   return params.toString();
 }

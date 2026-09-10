@@ -162,3 +162,13 @@ export function IconPlus({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconLock({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} strokeWidth={1.6}>
+      <rect className={base} x="10" y="22" width="28" height="20" rx="3" strokeLinejoin="round" />
+      <path className={base} d="M16 22v-6a8 8 0 0 1 16 0v6" strokeLinecap="round" strokeLinejoin="round" />
+      <path className={base} d="M24 30v6" strokeLinecap="round" />
+    </svg>
+  );
+}

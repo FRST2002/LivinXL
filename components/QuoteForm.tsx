@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { FormEvent, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { IconCheck } from "@/components/icons";
+import { IconCheck, IconLock } from "@/components/icons";
 import { formatCurrency } from "@/lib/finance";
 import { FRAME_COLORS } from "@/lib/pricing";
+import FinancingCalculator, { type FinancingCalculatorChange } from "@/components/FinancingCalculator";
 
 const OFFERTE_STAPPEN = [
   { title: "Adviesgesprek", description: "Wij nemen contact op om uw configuratie en wensen door te nemen." },
@@ -75,8 +76,6 @@ interface ConfiguratieSummary {
   breedte: number | null;
   diepte: number | null;
   lines: string[];
-  maandbedrag: number | null;
-  looptijd: number | null;
 }
 
 function useConfiguratieFromQuery(): ConfiguratieSummary | null {
@@ -87,8 +86,6 @@ function useConfiguratieFromQuery(): ConfiguratieSummary | null {
     const samenvattingRaw = searchParams.get("samenvatting");
     const breedteRaw = searchParams.get("breedte");
     const diepteRaw = searchParams.get("diepte");
-    const maandbedragRaw = searchParams.get("maandbedrag");
-    const looptijdRaw = searchParams.get("looptijd");
 
     if (!prijsRaw && !samenvattingRaw) return null;
 
@@ -102,8 +99,6 @@ function useConfiguratieFromQuery(): ConfiguratieSummary | null {
             .map((line) => line.trim())
             .filter(Boolean)
         : [],
-      maandbedrag: maandbedragRaw ? Number(maandbedragRaw) : null,
-      looptijd: looptijdRaw ? Number(looptijdRaw) : null,
     };
   }, [searchParams]);
 }
@@ -126,6 +121,7 @@ export default function QuoteForm() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [submitted, setSubmitted] = useState<FormState | null>(null);
   const [offerteMeta, setOfferteMeta] = useState<{ nummer: string; datum: string } | null>(null);
+  const [financing, setFinancing] = useState<FinancingCalculatorChange | null>(null);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -155,8 +151,6 @@ export default function QuoteForm() {
           ...form,
           configuratieLines: configuratie?.lines ?? [],
           prijs: configuratie?.prijs ?? null,
-          maandbedrag: configuratie?.maandbedrag ?? null,
-          looptijd: configuratie?.looptijd ?? null,
         }),
       });
       if (!res.ok) throw new Error("submit failed");
@@ -175,6 +169,7 @@ export default function QuoteForm() {
     setStatus("idle");
     setSubmitted(null);
     setOfferteMeta(null);
+    setFinancing(null);
   }
 
   function handleSaveOfferte() {
@@ -266,22 +261,36 @@ export default function QuoteForm() {
             )}
 
             {configuratie?.prijs != null && (
-              <div className="mt-8 grid grid-cols-1 gap-4 rounded-xl bg-anthracite-700 p-6 text-white break-inside-avoid sm:grid-cols-2">
-                <div>
-                  <p className="text-xs text-offwhite-300/70">Totaalbedrag veranda</p>
-                  <p className="mt-1 text-2xl font-bold">{formatCurrency(configuratie.prijs)}</p>
+              <div className="mt-8 rounded-xl bg-anthracite-700 p-6 text-white break-inside-avoid">
+                <p className="text-xs text-offwhite-300/70">Totaalbedrag veranda</p>
+                <p className="mt-1 text-2xl font-bold">{formatCurrency(configuratie.prijs)}</p>
+              </div>
+            )}
+
+            {configuratie?.prijs != null && (
+              <div className="mt-8 border-t border-anthracite-700/10 pt-8 print:hidden">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-anthracite-400">
+                  Stel zelf uw maandbedrag samen
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-anthracite-500">
+                  Schuif hieronder met de aanbetaling en looptijd om te zien wat bij u past. De
+                  financier bekijkt vervolgens wat voor u daadwerkelijk mogelijk is.
+                </p>
+                <div className="mt-4">
+                  <FinancingCalculator amount={configuratie.prijs} compact onChange={setFinancing} />
                 </div>
-                {configuratie.maandbedrag != null && (
-                  <div>
-                    <p className="text-xs text-offwhite-300/70">
-                      Maandbedrag (indicatief{configuratie.looptijd ? `, looptijd ${configuratie.looptijd} mnd` : ""})
-                    </p>
-                    <p className="mt-1 text-2xl font-bold text-copper-200">
-                      {formatCurrency(configuratie.maandbedrag)}
-                      <span className="ml-1 text-xs font-medium text-offwhite-400/70">/ mnd</span>
-                    </p>
-                  </div>
-                )}
+              </div>
+            )}
+            {financing && (
+              <div className="mt-8 hidden border-t border-anthracite-700/10 pt-8 print:block">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-anthracite-400">
+                  Uw samengestelde maandbedrag
+                </h3>
+                <p className="mt-2 text-sm text-anthracite-700">
+                  {formatCurrency(financing.monthlyPayment)} / mnd &middot; aanbetaling{" "}
+                  {formatCurrency(financing.downPayment)} &middot; looptijd {financing.termMonths} mnd
+                  (indicatief)
+                </p>
               </div>
             )}
 
@@ -396,25 +405,22 @@ export default function QuoteForm() {
               ))}
             </ul>
           )}
-          {(configuratie.prijs != null || configuratie.maandbedrag != null) && (
-            <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-anthracite-700/8 pt-5">
-              {configuratie.prijs != null && (
-                <div>
-                  <p className="text-xs text-anthracite-400">Totaalbedrag veranda</p>
-                  <p className="text-lg font-bold text-anthracite-700">{formatCurrency(configuratie.prijs)}</p>
+          {configuratie.prijs != null && (
+            <div className="relative mt-5 inline-flex items-center border-t border-anthracite-700/8 pt-5">
+              <div>
+                <p className="text-xs text-anthracite-400">Totaalbedrag veranda</p>
+                <p aria-hidden="true" className="select-none text-lg font-bold text-anthracite-700 blur-md">
+                  {formatCurrency(configuratie.prijs)}
+                </p>
+              </div>
+              <div className="absolute inset-x-0 bottom-0 flex items-center pb-1">
+                <div className="flex items-center gap-1.5 rounded-full bg-copper-50 px-3 py-1 whitespace-nowrap">
+                  <IconLock className="h-3.5 w-3.5 shrink-0 text-copper-600" />
+                  <span className="text-[11px] font-semibold text-copper-600">
+                    Zichtbaar na het versturen hieronder
+                  </span>
                 </div>
-              )}
-              {configuratie.maandbedrag != null && (
-                <div>
-                  <p className="text-xs text-anthracite-400">
-                    Maandbedrag (indicatief{configuratie.looptijd ? `, ${configuratie.looptijd} mnd` : ""})
-                  </p>
-                  <p className="text-lg font-bold text-anthracite-700">
-                    {formatCurrency(configuratie.maandbedrag)}
-                    <span className="ml-1 text-xs font-medium text-anthracite-400">/ mnd</span>
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>

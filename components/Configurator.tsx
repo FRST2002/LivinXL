@@ -17,8 +17,7 @@ import {
   describeConfiguration,
 } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/finance";
-import FinancingCalculator from "@/components/FinancingCalculator";
-import { IconBulb, IconLayers, IconRoof, IconRuler, IconScreen, IconWall } from "@/components/icons";
+import { IconBulb, IconLayers, IconLock, IconRoof, IconRuler, IconScreen, IconWall } from "@/components/icons";
 
 /** Debounced price lookup: the actual purchase-price data lives server-side only (see app/api/prijs). */
 function usePrijs(state: ConfiguratorState) {
@@ -132,13 +131,12 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function Configurator() {
   const [state, setState] = useState<ConfiguratorState>(CONFIGURATOR_DEFAULTS);
-  const [financing, setFinancing] = useState<{ monthlyPayment: number; termMonths: number } | null>(null);
   const { prijs, loading: prijsLoading } = usePrijs(state);
 
   const summaryLines = useMemo(() => describeConfiguration(state), [state]);
   const offerteHref = useMemo(
-    () => `/offerte?${configuratorStateToQuery(state, prijs ?? 0, financing ?? undefined)}`,
-    [state, prijs, financing]
+    () => `/offerte?${configuratorStateToQuery(state, prijs ?? 0)}`,
+    [state, prijs]
   );
 
   function update<K extends keyof ConfiguratorState>(key: K, value: ConfiguratorState[K]) {
@@ -333,27 +331,28 @@ export default function Configurator() {
         </div>
       </div>
 
-      {/* Right: sticky summary + financing. On mobile/tablet the financing calculator
-          comes first, so customers see an indicative monthly payment before they can
-          request an offerte; on desktop (xl+) the order stays summary-then-financing. */}
+      {/* Right: sticky summary. Price is blurred — unlocking it (and the interactive
+          monthly-payment calculator) requires submitting an offerte first. */}
       <div className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
-        <FinancingCalculator
-          amount={prijs ?? 0}
-          compact
-          className="order-1 xl:order-2"
-          onChange={(change) => setFinancing({ monthlyPayment: change.monthlyPayment, termMonths: change.termMonths })}
-        />
-
-        <div className="card order-2 p-6 sm:p-8 xl:order-1">
+        <div className="card p-6 sm:p-8">
           <span className="eyebrow">Uw configuratie</span>
-          <div className="mt-3 flex items-end gap-2">
-            <span className={`text-4xl font-extrabold tracking-tightest text-anthracite-700 ${prijsLoading ? "opacity-50" : ""}`}>
-              {prijs != null ? formatCurrency(prijs) : "..."}
-            </span>
+          <div className="relative mt-3">
+            <div className="flex items-end gap-2">
+              <span
+                aria-hidden="true"
+                className={`select-none text-4xl font-extrabold tracking-tightest text-anthracite-700 blur-md ${prijsLoading ? "opacity-50" : ""}`}
+              >
+                {prijs != null ? formatCurrency(prijs) : formatCurrency(0)}
+              </span>
+            </div>
+            <div className="absolute inset-0 flex items-center">
+              <div className="flex items-center gap-2 rounded-full bg-copper-50 px-3 py-1.5">
+                <IconLock className="h-4 w-4 shrink-0 text-copper-600" />
+                <span className="text-xs font-semibold text-copper-600">Vraag een offerte aan om uw prijs te zien</span>
+              </div>
+            </div>
           </div>
-          <p className="mt-1 text-xs text-anthracite-400">
-            {prijsLoading ? "Prijs wordt herberekend..." : "Inclusief montage"}
-          </p>
+          <p className="mt-1 text-xs text-anthracite-400">Inclusief montage</p>
 
           <ul className="mt-5 space-y-2 border-t border-anthracite-700/8 pt-5">
             {summaryLines.map((line) => (
@@ -365,12 +364,15 @@ export default function Configurator() {
 
           <div className="mt-6 flex flex-col gap-3">
             <Link href={offerteHref} className="btn-primary w-full">
-              Vraag offerte aan voor deze configuratie
+              Vraag offerte aan &amp; bekijk uw prijs
             </Link>
             <Link href="/contact" className="btn-ghost w-full">
               Stel een vraag
             </Link>
           </div>
+          <p className="mt-4 text-xs leading-relaxed text-anthracite-400">
+            Na uw aanvraag ziet u direct uw prijs, en kunt u zelf een maandbedrag samenstellen.
+          </p>
         </div>
       </div>
     </div>

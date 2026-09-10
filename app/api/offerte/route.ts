@@ -30,8 +30,6 @@ export async function POST(request: NextRequest) {
     ? body.configuratieLines.filter((line): line is string => typeof line === "string")
     : [];
   const prijs = typeof body.prijs === "number" ? body.prijs : null;
-  const maandbedrag = typeof body.maandbedrag === "number" ? body.maandbedrag : null;
-  const looptijd = typeof body.looptijd === "number" ? body.looptijd : null;
 
   try {
     await sendOfferteEmail({
@@ -48,8 +46,6 @@ export async function POST(request: NextRequest) {
       opmerkingen: String(body.opmerkingen ?? ""),
       configuratieLines,
       prijs,
-      maandbedrag,
-      looptijd,
     });
   } catch (error) {
     // Never block the customer's offerte because the internal notification failed.
