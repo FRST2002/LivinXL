@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 // TEMPORARY diagnostic route — reveals only presence/prefix, never the real
 // key, to confirm whether RESEND_API_KEY actually reaches the runtime.
 // Remove this file once the Resend issue is resolved.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const key = process.env.RESEND_API_KEY;
   return NextResponse.json({

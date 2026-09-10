@@ -6,7 +6,10 @@ const TO_EMAIL = process.env.RESEND_TO_EMAIL || "info@livinxl.nl";
 
 function getClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.error("RESEND_API_KEY ontbreekt in deze omgeving — e-mail wordt overgeslagen.");
+    return null;
+  }
   return new Resend(apiKey);
 }
 
