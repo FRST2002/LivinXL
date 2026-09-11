@@ -39,10 +39,10 @@ export interface FrameColorOption {
 }
 
 export const FRAME_COLORS: FrameColorOption[] = [
-  { id: "antraciet", label: "Antraciet", ral: "RAL 7016", hex: "#26292E" },
-  { id: "wit", label: "Signaalwit", ral: "RAL 9010", hex: "#F1EEE7" },
-  { id: "koper-bruin", label: "Koperbruin", ral: "RAL 8019", hex: "#4A3A31" },
-  { id: "zwart", label: "Dieprzwart", ral: "RAL 9005", hex: "#0B0C0E" },
+  { id: "wit", label: "Wit", ral: "RAL 9016", hex: "#F1F0EA" },
+  { id: "grijs-metallic", label: "Grijs metallic", ral: "RAL 9007", hex: "#8F8F8F" },
+  { id: "antraciet", label: "Antraciet", ral: "RAL 7016", hex: "#383E42" },
+  { id: "zwart", label: "Zwart", ral: "RAL 9005", hex: "#0A0A0A" },
 ];
 
 export type SidePosition = "voorkant" | "links" | "rechts";
