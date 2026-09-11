@@ -153,6 +153,14 @@ works in `middleware.ts` (Edge runtime) and in `app/api/admin/{login,logout}/rou
 three env vars are deliberately **not** hardcoded in source — this repo is on GitHub, and a literal
 password/secret in a commit is a password/secret leaked to anyone with repo access.
 
+`app/api/admin/login/route.ts` also rate-limits by IP via `lib/server/loginRateLimit.ts`: after 5 failed
+attempts from the same IP within 15 minutes, further attempts get a `429` without even checking the
+password, until the window passes; a successful login clears that IP's counter. This is backed by Postgres
+(a `login_attempts` table, same `DATABASE_URL`), not in-memory state, because serverless function
+instances don't reliably share memory across invocations — an in-memory counter would reset constantly and
+not actually limit anything. It fails open (allows the attempt) if the database is unreachable, since this
+is defense-in-depth on top of the real credential check, not the credential check itself.
+
 ### Every form also forwards to GoHighLevel via an inbound webhook
 
 `lib/server/ghl.ts`'s `sendToGhl(formulier, data)` POSTs `{ formulier, ...data }` (where `formulier` is
@@ -195,6 +203,15 @@ stop arriving or end up in the wrong branch/stage:
   Mapping Reference list, which only proves the endpoint received bytes) to confirm real executions.
 - Also note: "Inbound Webhook" is a **premium GHL trigger** with a per-execution cost, per GHL's own
   warning in the trigger settings.
+
+### Security headers (and the one deliberately skipped)
+
+`next.config.mjs`'s `headers()` sets `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+`Referrer-Policy: strict-origin-when-cross-origin`, a restrictive `Permissions-Policy`, and HSTS on every
+route. A `Content-Security-Policy` is deliberately **not** set: Next.js's own hydration scripts need either
+`'unsafe-inline'` or a per-request nonce to run at all, and getting that wrong silently breaks every page's
+JavaScript site-wide with no test suite to catch it. Add one later deliberately (nonce-based, wired through
+`middleware.ts`) with real testing — don't add a guessed CSP value here.
 
 ### Styling
 
