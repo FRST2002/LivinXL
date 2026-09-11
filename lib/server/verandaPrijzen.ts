@@ -68,6 +68,47 @@ const ZIJWAND_ALUMINIUM: Record<number, number> = {
   500: 693,
 };
 
+// --- Zijwanden: polycarbonaat (dicht paneel), MB Aluminium "ZIJWANDEN \ POLYCARBONAAT"-tabel ---
+const ZIJWAND_POLYCARBONAAT: Record<number, number> | null = {
+  250: 307,
+  300: 307,
+  350: 407,
+  400: 407,
+  450: 506,
+  500: 506,
+};
+
+// --- Spie: gevelstuk boven de zijwand, onder het aflopende dak (MB Aluminium, "SPIE"-tabel). ---
+// CM = overspanning (diepte) van de spie. De leverancier heeft twee aluminium-varianten
+// (16cm en 20cm profiel); de configurator kent geen aparte profielbreedte-keuze, dus we
+// gebruiken de 20cm-variant (de bredere/volledige uitvoering) als standaard voor "Aluminium".
+// Let op: de brontabel toont bij 500cm dezelfde prijzen als bij 450cm voor beide
+// aluminium-varianten (369 / 447) — dat is overgenomen zoals aangeleverd, geen invoerfout hier.
+const SPIE_POLYCARBONAAT: Record<number, number> | null = {
+  250: 85,
+  300: 101,
+  350: 114,
+  400: 131,
+  450: 146,
+  500: 160,
+};
+const SPIE_ALUMINIUM: Record<number, number> | null = {
+  250: 226,
+  300: 270,
+  350: 314,
+  400: 359,
+  450: 447,
+  500: 447,
+};
+const SPIE_GLAS: Record<number, number> | null = {
+  250: 279,
+  300: 356,
+  350: 438,
+  400: 516,
+  450: 595,
+  500: 673,
+};
+
 // --- Screens: zip-screens, kast 11x11 (rij = hoogte cm, kolom = breedte cm) ---
 const ZIPSCREEN_11X11: Matrix = {
   150: { 100: 511, 150: 586, 200: 628, 250: 698, 300: 745, 350: 811, 400: 853, 450: 911, 500: 950, 550: 986, 600: 1403 },
@@ -85,29 +126,93 @@ const LED_MINIMALE_LENGTE_M = 4;
 
 export type RoofMaterialKey = "polycarbonaat-opaal" | "polycarbonaat-helder" | "glas-helder";
 export type SidePositionKey = "voorkant" | "links" | "rechts";
-export type ZijwandPositionKey = "links" | "rechts";
+export type VoorkantMateriaalKey = "geen" | "schuifwanden";
+export type ZijwandMateriaalKey = "geen" | "polycarbonaat" | "aluminium" | "schuifwanden";
+export type SpieMateriaalKey = "geen" | "polycarbonaat" | "aluminium" | "glas";
+
+export interface ZijwandKantInput {
+  materiaal: ZijwandMateriaalKey;
+  spie: SpieMateriaalKey;
+}
 
 export interface VerandaPrijsInput {
   width: number; // cm
   depth: number; // cm
   roofMaterial: RoofMaterialKey;
-  schuifwanden: SidePositionKey[];
-  zijwanden: ZijwandPositionKey[];
+  voorkant: VoorkantMateriaalKey;
+  zijwandLinks: ZijwandKantInput;
+  zijwandRechts: ZijwandKantInput;
   screens: SidePositionKey[];
   ledverlichting: boolean;
 }
 
+export interface VerkoopprijsResultaat {
+  prijs: number;
+  /** Namen van gekozen onderdelen zonder bekende inkoopprijs (tellen mee als €0). */
+  onvolledigeOnderdelen: string[];
+}
+
 /** Span (in cm) that a side element covers, depending on which side it's on. */
-function spanForPosition(position: SidePositionKey | ZijwandPositionKey, width: number, depth: number): number {
+function spanForPosition(position: SidePositionKey, width: number, depth: number): number {
   return position === "voorkant" ? width : depth;
 }
+
+/** Looks up a purchase price by nearest span in a matrix, or reports it as unpriced. */
+function prijsUitTabel(tabel: Record<number, number> | null, span: number): { prijs: number; onbekend: boolean } {
+  if (!tabel) return { prijs: 0, onbekend: true };
+  const spans = Object.keys(tabel).map(Number);
+  return { prijs: tabel[nearest(span, spans)], onbekend: false };
+}
+
+function zijwandInkoop(materiaal: ZijwandMateriaalKey, span: number): { prijs: number; onbekend: boolean } {
+  switch (materiaal) {
+    case "geen":
+      return { prijs: 0, onbekend: false };
+    case "aluminium":
+      return prijsUitTabel(ZIJWAND_ALUMINIUM, span);
+    case "polycarbonaat":
+      return prijsUitTabel(ZIJWAND_POLYCARBONAAT, span);
+    case "schuifwanden": {
+      const panelen = Math.max(1, Math.ceil(span / SCHUIFWAND_PANEEL_BREEDTE_CM));
+      return { prijs: panelen * SCHUIFWAND_PANEEL_PRIJS_PER_STUK, onbekend: false };
+    }
+  }
+}
+
+function spieInkoop(materiaal: SpieMateriaalKey, span: number): { prijs: number; onbekend: boolean } {
+  switch (materiaal) {
+    case "geen":
+      return { prijs: 0, onbekend: false };
+    case "aluminium":
+      return prijsUitTabel(SPIE_ALUMINIUM, span);
+    case "polycarbonaat":
+      return prijsUitTabel(SPIE_POLYCARBONAAT, span);
+    case "glas":
+      return prijsUitTabel(SPIE_GLAS, span);
+  }
+}
+
+const ZIJWAND_MATERIAAL_LABEL: Record<ZijwandMateriaalKey, string> = {
+  geen: "Geen",
+  polycarbonaat: "Polycarbonaat",
+  aluminium: "Aluminium",
+  schuifwanden: "Glazen schuifwanden",
+};
+
+const SPIE_MATERIAAL_LABEL: Record<SpieMateriaalKey, string> = {
+  geen: "Geen",
+  polycarbonaat: "Polycarbonaat",
+  aluminium: "Aluminium",
+  glas: "Glas",
+};
 
 /**
  * Calculates the sell price (220% van de inkoopprijs) for a veranda configuration.
  * This is the only function that should ever touch the raw purchase prices above.
  */
-export function berekenVerkoopprijs(input: VerandaPrijsInput): number {
+export function berekenVerkoopprijs(input: VerandaPrijsInput): VerkoopprijsResultaat {
   let inkoop = 0;
+  const onvolledig: string[] = [];
 
   // Frame + dak. De leverancier prijst polycarbonaat helder/opaal gelijk; om toch
   // enig visueel prijsverschil te tonen (helder = iets duurder materiaal) rekenen
@@ -117,18 +222,27 @@ export function berekenVerkoopprijs(input: VerandaPrijsInput): number {
   if (input.roofMaterial === "polycarbonaat-helder") frameDakPrijs *= 1.05;
   inkoop += frameDakPrijs;
 
-  // Glazen schuifwanden: aantal panelen van ~1m breed, per gekozen positie.
-  for (const positie of input.schuifwanden) {
-    const span = spanForPosition(positie, input.width, input.depth);
-    const panelen = Math.max(1, Math.ceil(span / SCHUIFWAND_PANEEL_BREEDTE_CM));
+  // Voorkant: alleen "geen" of over de volle breedte glazen schuifwanden.
+  if (input.voorkant === "schuifwanden") {
+    const panelen = Math.max(1, Math.ceil(input.width / SCHUIFWAND_PANEEL_BREEDTE_CM));
     inkoop += panelen * SCHUIFWAND_PANEEL_PRIJS_PER_STUK;
   }
 
-  // Zijwanden: dichte aluminium panelen, geprijsd op de diepte die ze overspannen.
-  for (const positie of input.zijwanden) {
-    const span = spanForPosition(positie, input.width, input.depth);
-    const depths = Object.keys(ZIJWAND_ALUMINIUM).map(Number);
-    inkoop += ZIJWAND_ALUMINIUM[nearest(span, depths)];
+  // Zijwanden + spie: per kant (links/rechts) een materiaalkeuze voor de wand
+  // zelf en, onafhankelijk daarvan, voor de spie (het gevelstuk onder het
+  // aflopende dak). Beide overspannen de diepte van de veranda.
+  const kanten: { kant: ZijwandKantInput; wandLabel: string; spieLabel: string }[] = [
+    { kant: input.zijwandLinks, wandLabel: "Linkerzijwand", spieLabel: "Linker spie" },
+    { kant: input.zijwandRechts, wandLabel: "Rechterzijwand", spieLabel: "Rechter spie" },
+  ];
+  for (const { kant, wandLabel, spieLabel } of kanten) {
+    const wand = zijwandInkoop(kant.materiaal, input.depth);
+    inkoop += wand.prijs;
+    if (wand.onbekend) onvolledig.push(`${wandLabel} (${ZIJWAND_MATERIAAL_LABEL[kant.materiaal]})`);
+
+    const spie = spieInkoop(kant.spie, input.depth);
+    inkoop += spie.prijs;
+    if (spie.onbekend) onvolledig.push(`${spieLabel} (${SPIE_MATERIAAL_LABEL[kant.spie]})`);
   }
 
   // Screens: zip-screens, vaste (aangenomen) hoogte van 200cm.
@@ -144,5 +258,5 @@ export function berekenVerkoopprijs(input: VerandaPrijsInput): number {
   }
 
   const verkoop = inkoop * MARGE_FACTOR;
-  return Math.round(verkoop / 50) * 50;
+  return { prijs: Math.round(verkoop / 50) * 50, onvolledigeOnderdelen: onvolledig };
 }

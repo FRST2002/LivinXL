@@ -8,14 +8,33 @@ import {
   ConfiguratorState,
   FRAME_COLORS,
   LIMITS,
+  MateriaalOption,
   PositionOption,
   ROOF_MATERIALS,
-  SCHUIFWAND_POSITIONS,
   SCREEN_POSITIONS,
-  ZIJWAND_POSITIONS,
+  SPIE_MATERIALEN,
+  SpieMateriaal,
+  VOORKANT_MATERIALEN,
+  ZIJWAND_MATERIALEN,
+  ZijwandKant,
+  ZijwandMateriaal,
   configuratorStateToQuery,
   describeConfiguration,
 } from "@/lib/pricing";
+
+/** Bij het kiezen van een zijwandmateriaal is "geen" spie geen optie meer; dit is het
+ * sensibele startpunt (zelfde materiaal als de wand, of aluminium bij schuifwanden). */
+const DEFAULT_SPIE_VOOR_MATERIAAL: Record<Exclude<ZijwandMateriaal, "geen">, SpieMateriaal> = {
+  polycarbonaat: "polycarbonaat",
+  aluminium: "aluminium",
+  schuifwanden: "aluminium",
+};
+
+/** "Geen" is geen geldige spie-keuze zodra er een zijwandmateriaal gekozen is. */
+function spieOpties(zijwandMateriaal: ZijwandMateriaal): MateriaalOption<SpieMateriaal>[] {
+  if (zijwandMateriaal === "geen") return SPIE_MATERIALEN;
+  return SPIE_MATERIALEN.filter((optie) => optie.id !== "geen");
+}
 import { formatCurrency } from "@/lib/finance";
 import { IconBulb, IconLayers, IconLock, IconRoof, IconRuler, IconScreen, IconWall } from "@/components/icons";
 
@@ -23,6 +42,7 @@ import { IconBulb, IconLayers, IconLock, IconRoof, IconRuler, IconScreen, IconWa
 function usePrijs(state: ConfiguratorState) {
   const [prijs, setPrijs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [onvolledigeOnderdelen, setOnvolledigeOnderdelen] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,16 +56,18 @@ function usePrijs(state: ConfiguratorState) {
           width: state.width,
           depth: state.depth,
           roofMaterial: state.roofMaterial,
-          schuifwanden: state.schuifwanden,
-          zijwanden: state.zijwanden,
+          voorkant: state.voorkant,
+          zijwandLinks: state.zijwandLinks,
+          zijwandRechts: state.zijwandRechts,
           screens: state.screens,
           ledverlichting: state.ledverlichting,
         }),
       })
         .then((res) => res.json())
-        .then((data: { prijs?: number }) => {
+        .then((data: { prijs?: number; onvolledigeOnderdelen?: string[] }) => {
           if (!cancelled && typeof data.prijs === "number") {
             setPrijs(data.prijs);
+            setOnvolledigeOnderdelen(data.onvolledigeOnderdelen ?? []);
             setLoading(false);
           }
         })
@@ -62,13 +84,50 @@ function usePrijs(state: ConfiguratorState) {
     state.width,
     state.depth,
     state.roofMaterial,
-    state.schuifwanden,
-    state.zijwanden,
+    state.voorkant,
+    state.zijwandLinks,
+    state.zijwandRechts,
     state.screens,
     state.ledverlichting,
   ]);
 
-  return { prijs, loading };
+  return { prijs, loading, onvolledigeOnderdelen };
+}
+
+/** Visuele materiaalkeuze: foto + label per optie, zoals bij het dakmateriaal hierboven. */
+function MateriaalPicker<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: MateriaalOption<T>[];
+  value: T;
+  onChange: (id: T) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {options.map((option) => {
+        const active = value === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onChange(option.id)}
+            className={`overflow-hidden rounded-xl border text-left transition-colors ${
+              active ? "border-copper bg-copper-50" : "border-anthracite-700/12 hover:border-anthracite-700/30"
+            }`}
+          >
+            <div className="relative h-20 w-full">
+              <Image src={option.image} alt={option.label} fill className="object-cover" />
+            </div>
+            <div className="p-2.5">
+              <span className="block text-xs font-semibold text-anthracite-700">{option.label}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function PositionToggles<T extends string>({
@@ -131,7 +190,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function Configurator() {
   const [state, setState] = useState<ConfiguratorState>(CONFIGURATOR_DEFAULTS);
-  const { prijs, loading: prijsLoading } = usePrijs(state);
+  const { prijs, loading: prijsLoading, onvolledigeOnderdelen } = usePrijs(state);
 
   const summaryLines = useMemo(() => describeConfiguration(state), [state]);
   const offerteHref = useMemo(
@@ -141,6 +200,23 @@ export default function Configurator() {
 
   function update<K extends keyof ConfiguratorState>(key: K, value: ConfiguratorState[K]) {
     setState((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function updateKant(kant: "zijwandLinks" | "zijwandRechts", patch: Partial<ZijwandKant>) {
+    setState((prev) => {
+      const huidig = prev[kant];
+      const volgende = { ...huidig, ...patch };
+      // Een gekozen zijwand vraagt altijd om een spie-keuze (nooit "geen" spie op een
+      // echte wand); andersom hoort bij "geen" zijwand ook geen spie.
+      if (patch.materiaal !== undefined) {
+        if (patch.materiaal === "geen") {
+          volgende.spie = "geen";
+        } else if (volgende.spie === "geen") {
+          volgende.spie = DEFAULT_SPIE_VOOR_MATERIAAL[patch.materiaal];
+        }
+      }
+      return { ...prev, [kant]: volgende };
+    });
   }
 
   return (
@@ -265,15 +341,15 @@ export default function Configurator() {
               <div className="flex items-center gap-3">
                 <IconLayers className="h-5 w-5 shrink-0 text-copper" />
                 <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Glazen schuifwanden</p>
-                  <p className="text-xs text-anthracite-400">Kies de zijden waar u schuifwanden wilt</p>
+                  <p className="text-sm font-semibold text-anthracite-700">Voorkant</p>
+                  <p className="text-xs text-anthracite-400">Open, of glazen schuifwanden over de volledige breedte</p>
                 </div>
               </div>
               <div className="mt-3 pl-8">
-                <PositionToggles
-                  value={state.schuifwanden}
-                  options={SCHUIFWAND_POSITIONS}
-                  onChange={(v) => update("schuifwanden", v)}
+                <MateriaalPicker
+                  options={VOORKANT_MATERIALEN}
+                  value={state.voorkant}
+                  onChange={(v) => update("voorkant", v)}
                 />
               </div>
             </div>
@@ -282,16 +358,69 @@ export default function Configurator() {
               <div className="flex items-center gap-3">
                 <IconWall className="h-5 w-5 shrink-0 text-copper" />
                 <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Zijwanden</p>
-                  <p className="text-xs text-anthracite-400">Dichte panelen voor extra beschutting</p>
+                  <p className="text-sm font-semibold text-anthracite-700">Linkerzijde</p>
+                  <p className="text-xs text-anthracite-400">Kies het materiaal voor de zijwand en de spie</p>
                 </div>
               </div>
-              <div className="mt-3 pl-8">
-                <PositionToggles
-                  value={state.zijwanden}
-                  options={ZIJWAND_POSITIONS}
-                  onChange={(v) => update("zijwanden", v)}
-                />
+              <div className="mt-3 space-y-4 pl-8">
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Zijwand</p>
+                  <MateriaalPicker
+                    options={ZIJWAND_MATERIALEN}
+                    value={state.zijwandLinks.materiaal}
+                    onChange={(v) => updateKant("zijwandLinks", { materiaal: v })}
+                  />
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">
+                    Spie (gevelstuk onder het dak)
+                  </p>
+                  <MateriaalPicker
+                    options={spieOpties(state.zijwandLinks.materiaal)}
+                    value={state.zijwandLinks.spie}
+                    onChange={(v) => updateKant("zijwandLinks", { spie: v })}
+                  />
+                  {state.zijwandLinks.materiaal !== "geen" && (
+                    <p className="mt-2 text-xs text-anthracite-400">
+                      Verplicht zodra u een zijwand kiest.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="py-4">
+              <div className="flex items-center gap-3">
+                <IconWall className="h-5 w-5 shrink-0 text-copper" />
+                <div>
+                  <p className="text-sm font-semibold text-anthracite-700">Rechterzijde</p>
+                  <p className="text-xs text-anthracite-400">Kies het materiaal voor de zijwand en de spie</p>
+                </div>
+              </div>
+              <div className="mt-3 space-y-4 pl-8">
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Zijwand</p>
+                  <MateriaalPicker
+                    options={ZIJWAND_MATERIALEN}
+                    value={state.zijwandRechts.materiaal}
+                    onChange={(v) => updateKant("zijwandRechts", { materiaal: v })}
+                  />
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">
+                    Spie (gevelstuk onder het dak)
+                  </p>
+                  <MateriaalPicker
+                    options={spieOpties(state.zijwandRechts.materiaal)}
+                    value={state.zijwandRechts.spie}
+                    onChange={(v) => updateKant("zijwandRechts", { spie: v })}
+                  />
+                  {state.zijwandRechts.materiaal !== "geen" && (
+                    <p className="mt-2 text-xs text-anthracite-400">
+                      Verplicht zodra u een zijwand kiest.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -349,6 +478,12 @@ export default function Configurator() {
             Vraag een offerte aan om uw prijs te zien
           </p>
           <p className="mt-1 text-xs text-anthracite-400">Inclusief montage</p>
+          {onvolledigeOnderdelen.length > 0 && (
+            <p className="mt-2 text-xs leading-relaxed text-anthracite-400">
+              Prijs voor {onvolledigeOnderdelen.join(", ")} wordt door onze adviseur definitief bepaald en zit
+              nog niet in dit bedrag.
+            </p>
+          )}
 
           <ul className="mt-5 space-y-2 border-t border-anthracite-700/8 pt-5">
             {summaryLines.map((line) => (

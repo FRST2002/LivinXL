@@ -46,23 +46,11 @@ export const FRAME_COLORS: FrameColorOption[] = [
 ];
 
 export type SidePosition = "voorkant" | "links" | "rechts";
-export type ZijwandPosition = "links" | "rechts";
 
 export interface PositionOption<T extends string> {
   id: T;
   label: string;
 }
-
-export const SCHUIFWAND_POSITIONS: PositionOption<SidePosition>[] = [
-  { id: "voorkant", label: "Voorkant" },
-  { id: "links", label: "Linkerzijkant" },
-  { id: "rechts", label: "Rechterzijkant" },
-];
-
-export const ZIJWAND_POSITIONS: PositionOption<ZijwandPosition>[] = [
-  { id: "links", label: "Linkerzijwand" },
-  { id: "rechts", label: "Rechterzijwand" },
-];
 
 export const SCREEN_POSITIONS: PositionOption<SidePosition>[] = [
   { id: "voorkant", label: "Voorkant" },
@@ -70,13 +58,104 @@ export const SCREEN_POSITIONS: PositionOption<SidePosition>[] = [
   { id: "rechts", label: "Rechterzijkant" },
 ];
 
+export interface MateriaalOption<T extends string> {
+  id: T;
+  label: string;
+  description: string;
+  image: string;
+}
+
+/** Materiaalkeuze voor de voorkant: alleen open of (over de volle breedte) schuifwanden. */
+export type VoorkantMateriaal = "geen" | "schuifwanden";
+
+export const VOORKANT_MATERIALEN: MateriaalOption<VoorkantMateriaal>[] = [
+  {
+    id: "geen",
+    label: "Open",
+    description: "Volledig open voorzijde, geen wand",
+    image: "/wandopties/voorkant-geen.jpg",
+  },
+  {
+    id: "schuifwanden",
+    label: "Glazen schuifwanden",
+    description: "Schuifbare glazen wanden over de volledige breedte",
+    image: "/wandopties/schuifwanden.png",
+  },
+];
+
+/** Materiaalkeuze voor een zijwand (links of rechts). */
+export type ZijwandMateriaal = "geen" | "polycarbonaat" | "aluminium" | "schuifwanden";
+
+export const ZIJWAND_MATERIALEN: MateriaalOption<ZijwandMateriaal>[] = [
+  {
+    id: "geen",
+    label: "Open",
+    description: "Volledig open zijkant, geen wand",
+    image: "/wandopties/geen.jpg",
+  },
+  {
+    id: "polycarbonaat",
+    label: "Polycarbonaat",
+    description: "Lichtdoorlatend, dicht paneel",
+    image: "/wandopties/polycarbonaat.jpg",
+  },
+  {
+    id: "aluminium",
+    label: "Aluminium",
+    description: "Volledig dichte aluminium wand, zelfde kleur als het frame",
+    image: "/wandopties/aluminium.jpg",
+  },
+  {
+    id: "schuifwanden",
+    label: "Glazen schuifwanden",
+    description: "Schuifbare glazen wanden, volledig open te zetten",
+    image: "/wandopties/zijwand-schuifwanden.jpg",
+  },
+];
+
+/** Materiaalkeuze voor de spie: het gevelstuk boven een zijwand, onder het aflopende dak. */
+export type SpieMateriaal = "geen" | "polycarbonaat" | "aluminium" | "glas";
+
+export const SPIE_MATERIALEN: MateriaalOption<SpieMateriaal>[] = [
+  {
+    id: "geen",
+    label: "Geen",
+    description: "Geen invulling boven de zijwand",
+    image: "/wandopties/geen.jpg",
+  },
+  {
+    id: "polycarbonaat",
+    label: "Polycarbonaat",
+    description: "Lichtdoorlatend paneel in de gevelspie",
+    image: "/wandopties/spie-polycarbonaat.jpg",
+  },
+  {
+    id: "aluminium",
+    label: "Aluminium",
+    description: "Dichte aluminium spie, zelfde kleur als het frame",
+    image: "/wandopties/aluminium.jpg",
+  },
+  {
+    id: "glas",
+    label: "Glas",
+    description: "Heldere glazen spie voor maximale lichtinval",
+    image: "/wandopties/spie-glas.jpg",
+  },
+];
+
+export interface ZijwandKant {
+  materiaal: ZijwandMateriaal;
+  spie: SpieMateriaal;
+}
+
 export interface ConfiguratorState {
   width: number; // cm, 300 - 700
   depth: number; // cm, 250 - 500
   roofMaterial: RoofMaterial;
   frameColor: string;
-  schuifwanden: SidePosition[];
-  zijwanden: ZijwandPosition[];
+  voorkant: VoorkantMateriaal;
+  zijwandLinks: ZijwandKant;
+  zijwandRechts: ZijwandKant;
   ledverlichting: boolean;
   screens: SidePosition[];
 }
@@ -86,8 +165,9 @@ export const CONFIGURATOR_DEFAULTS: ConfiguratorState = {
   depth: 300,
   roofMaterial: "polycarbonaat-opaal",
   frameColor: "antraciet",
-  schuifwanden: [],
-  zijwanden: [],
+  voorkant: "geen",
+  zijwandLinks: { materiaal: "geen", spie: "geen" },
+  zijwandRechts: { materiaal: "geen", spie: "geen" },
   ledverlichting: true,
   screens: [],
 };
@@ -97,6 +177,18 @@ export const LIMITS = {
   depth: { min: 250, max: 500, step: 10 },
 };
 
+function describeKant(kant: ZijwandKant): string | null {
+  if (kant.materiaal === "geen" && kant.spie === "geen") return null;
+  const parts: string[] = [];
+  if (kant.materiaal !== "geen") {
+    parts.push(ZIJWAND_MATERIALEN.find((m) => m.id === kant.materiaal)?.label ?? kant.materiaal);
+  }
+  if (kant.spie !== "geen") {
+    parts.push(`spie: ${SPIE_MATERIALEN.find((m) => m.id === kant.spie)?.label ?? kant.spie}`);
+  }
+  return parts.join(", ");
+}
+
 export function describeConfiguration(state: ConfiguratorState): string[] {
   const color = FRAME_COLORS.find((c) => c.id === state.frameColor);
   const roof = ROOF_MATERIALS.find((r) => r.id === state.roofMaterial);
@@ -105,14 +197,13 @@ export function describeConfiguration(state: ConfiguratorState): string[] {
     `Dak: ${roof ? roof.label : state.roofMaterial}`,
     `Kleur frame: ${color ? `${color.label} (${color.ral})` : state.frameColor}`,
   ];
-  if (state.schuifwanden.length > 0) {
-    const labels = SCHUIFWAND_POSITIONS.filter((p) => state.schuifwanden.includes(p.id)).map((p) => p.label);
-    lines.push(`Glazen schuifwanden: ${labels.join(", ")}`);
+  if (state.voorkant === "schuifwanden") {
+    lines.push("Voorkant: glazen schuifwanden");
   }
-  if (state.zijwanden.length > 0) {
-    const labels = ZIJWAND_POSITIONS.filter((p) => state.zijwanden.includes(p.id)).map((p) => p.label);
-    lines.push(`Zijwanden: ${labels.join(", ")}`);
-  }
+  const linksLabel = describeKant(state.zijwandLinks);
+  if (linksLabel) lines.push(`Linkerzijde: ${linksLabel}`);
+  const rechtsLabel = describeKant(state.zijwandRechts);
+  if (rechtsLabel) lines.push(`Rechterzijde: ${rechtsLabel}`);
   if (state.screens.length > 0) {
     const labels = SCREEN_POSITIONS.filter((p) => state.screens.includes(p.id)).map((p) => p.label);
     lines.push(`Screens: ${labels.join(", ")}`);

@@ -27,7 +27,8 @@ Open vervolgens [http://localhost:3000](http://localhost:3000).
 
 ## Belangrijkste logica
 
-- `lib/pricing.ts` — configuratie-opties (afmetingen, dakmateriaal, kleuren, posities)
+- `lib/pricing.ts` — configuratie-opties (afmetingen, dakmateriaal, kleuren, en per zijde een foto-gebaseerde
+  materiaalkeuze voor zijwand + spie)
 - `lib/server/verandaPrijzen.ts` — de daadwerkelijke prijsberekening (verkoopprijs = 220% van de inkoopprijs). Dit
   bestand mag nooit vanuit een "use client"-component worden geïmporteerd; alleen
   `app/api/prijs/route.ts` roept het aan, zodat inkoopprijzen nooit in de browser terechtkomen.

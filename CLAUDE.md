@@ -24,18 +24,38 @@ exists. `npx tsc --noEmit` can be used for a standalone type-check.
 
 ### Pricing is real (cost + margin), calculated server-side only
 
-- `lib/pricing.ts` — configurator option definitions only (roof materials, frame colors, wall/screen
-  positions, limits, `ConfiguratorState`). `configuratorStateToQuery()` serializes the current
-  configuration (summary, price, and optionally the chosen monthly payment/term) into URL query params
-  consumed by `/offerte`. No purchase prices or pricing math live here.
+- `lib/pricing.ts` — configurator option definitions only (roof materials, frame colors, screen positions,
+  limits, `ConfiguratorState`). `configuratorStateToQuery()` serializes the current configuration (summary,
+  price, and width/depth) into URL query params consumed by `/offerte`. No purchase prices or pricing math
+  live here.
 - `lib/server/verandaPrijzen.ts` — holds the real MB Aluminium Partners purchase-price tables (frame+roof
   by width/depth, schuifwanden per panel, zijwanden, screens, led) and `berekenVerkoopprijs()`, which sums
-  the relevant purchase prices and multiplies the total by 2.2 (sell price = 220% of purchase price). **This file must never be imported from a
+  the relevant purchase prices and multiplies the total by 2.2 (sell price = 220% of purchase price), and
+  returns `{ prijs, onvolledigeOnderdelen }`. **This file must never be imported from a
   "use client" component** — doing so would ship purchase prices into the browser bundle. It is only
-  imported by `app/api/prijs/route.ts`, a POST route handler that takes a configuration and returns just
-  `{ prijs }` — never the underlying cost breakdown. (Ideally the `server-only` package would enforce this
-  boundary at build time; it isn't installed here, so it's enforced by convention only — don't undo that by
-  importing `verandaPrijzen.ts` from client code.)
+  imported by `app/api/prijs/route.ts`, a POST route handler that takes a configuration and returns that
+  same `{ prijs, onvolledigeOnderdelen }` shape — never the underlying cost breakdown. (Ideally the
+  `server-only` package would enforce this boundary at build time; it isn't installed here, so it's enforced
+  by convention only — don't undo that by importing `verandaPrijzen.ts` from client code.)
+- **Zijwanden and "spie" are photo-based material pickers, each fully priced.** Each side
+  (`zijwandLinks`/`zijwandRechts` in `ConfiguratorState`, `lib/pricing.ts`) has two independent material
+  choices, each rendered as a photo grid (see `MateriaalPicker` in `Configurator.tsx`, photos in
+  `public/wandopties/`): a **zijwand** material (`geen` / `polycarbonaat` / `aluminium` / `schuifwanden`)
+  and a **spie** material (`geen` / `polycarbonaat` / `aluminium` / `glas`) — the spie is the gable-shaped
+  panel above the zijwand, under the sloped roof edge. Whenever `zijwandLinks.materiaal` (or
+  `zijwandRechts.materiaal`) is not `"geen"`, its `.spie` is not allowed to be `"geen"` either — a chosen
+  wall always needs a spie choice, enforced in `Configurator.tsx` (switching the wall material away from
+  `"geen"` auto-picks a non-`"geen"` spie if one isn't already set, and the spie picker hides the `"geen"`
+  option while a wall material is selected). `voorkant` (front) is simpler: just `geen` or `schuifwanden`
+  (no spie, no material choice). All of these (`ZIJWAND_POLYCARBONAAT`, `ZIJWAND_ALUMINIUM`,
+  `SPIE_POLYCARBONAAT`, `SPIE_ALUMINIUM`, `SPIE_GLAS` in `verandaPrijzen.ts`) now have real MB Aluminium
+  Partners purchase prices; note `SPIE_ALUMINIUM` uses the supplier's "20cm profiel" column (there's also
+  an unused "16cm profiel" column — the configurator has no profile-width selector, so this is a
+  deliberate simplification, not a data gap). `zijwandInkoop`/`spieInkoop` still have an "onbekend"
+  fallback (returns €0 and reports the label via `onvolledigeOnderdelen`, which the configurator surfaces
+  as "Prijs voor … wordt door onze adviseur definitief bepaald") for whichever future material shows up
+  with no purchase price transcribed yet — per this project's rule against ever guessing real supplier
+  numbers, don't remove that fallback even though every current option is priced.
 - `components/Configurator.tsx` fetches `/api/prijs` on a 300ms debounce whenever the configuration
   changes (see its local `usePrijs` hook) instead of computing a price synchronously — expect a brief
   "wordt herberekend..." state after each change, not an instant number.
