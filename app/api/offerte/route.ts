@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendOfferteEmail } from "@/lib/server/email";
 import { saveOfferte } from "@/lib/server/db";
+import { sendToGhl } from "@/lib/server/ghl";
 
 function genereerOfferteNummer(): string {
   const jaar = new Date().getFullYear();
@@ -60,6 +61,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Same principle: a broken admin-overview save should never fail the customer's request.
     console.error("Kon offerte niet opslaan voor het admin-overzicht:", error);
+  }
+
+  try {
+    await sendToGhl("offerte", offerteData);
+  } catch (error) {
+    console.error("Kon offerte niet doorsturen naar GoHighLevel:", error);
   }
 
   return NextResponse.json({ ok: true, offerteNummer, datum });

@@ -153,6 +153,18 @@ works in `middleware.ts` (Edge runtime) and in `app/api/admin/{login,logout}/rou
 three env vars are deliberately **not** hardcoded in source — this repo is on GitHub, and a literal
 password/secret in a commit is a password/secret leaked to anyone with repo access.
 
+### Every form also forwards to GoHighLevel via an inbound webhook
+
+`lib/server/ghl.ts`'s `sendToGhl(formulier, data)` POSTs `{ formulier, ...data }` (where `formulier` is
+`"offerte" | "contact" | "dealer"`) to `GHL_WEBHOOK_URL` — a GoHighLevel Workflow configured with an
+"Inbound Webhook" trigger. This project deliberately does **not** talk to the GHL REST API directly (no
+OAuth/API-token handling here): GHL itself owns all the CRM logic (create/update contact, tags, pipeline
+stage) inside the workflow the webhook triggers, so this file has zero GHL-schema knowledge — it just
+forwards the same data that already goes into the internal notification e-mail (and, for offertes, the
+database). All three `app/api/{offerte,contact,dealer}/route.ts` call it in their own try/catch, after
+their existing email/DB calls, same non-blocking principle: a GHL hiccup must never fail the customer's
+submission. Without `GHL_WEBHOOK_URL` set, the call silently no-ops (logged, not surfaced).
+
 ### Styling
 
 Design tokens (the `anthracite`/`copper`/`offwhite` palette, `tracking-tightest`, custom shadows) live in
