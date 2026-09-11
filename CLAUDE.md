@@ -166,13 +166,26 @@ their existing email/DB calls, same non-blocking principle: a GHL hiccup must ne
 submission. Without `GHL_WEBHOOK_URL` set, the call silently no-ops (logged, not surfaced).
 
 The GHL Workflow ("Website → Aanvraag") itself needs, in this order: **Inbound Webhook** trigger →
-**Create/Update Contact** → **Create or update opportunity**. Two non-obvious gotchas that cost real
-debugging time when this was set up, worth checking first if leads stop arriving:
+**Create/Update Contact** → a 3-way **Condition** (If/Else) branching on the `formulier` custom value
+(`"formulier" Is "offerte"` / `"formulier" Is "dealer"` / the leftover "None" branch = `contact`). Each of
+the three branches does its own **Add Tag** (`offerte` / `dealer` / `contact` respectively), its own
+**Create or update opportunity** (same "Sales LivinXL" pipeline for all three, but a different **In
+Pipeline Stage** per branch — e.g. "New Lead Website" for offerte, "Dealeraanvraag" for dealer,
+"Contactaanvraag" for contact — so every website submission is visible in one pipeline, just staged
+differently), and its own **Send WhatsApp** with a message template specific to that form type. Opportunity
+Name/Value/Source stay mapped the same way in all three branches (`Contact.Full Name` / `prijs` /
+`formulier`) — `prijs` is simply empty for dealer/contact since those payloads don't include it, which is
+expected, not a bug.
+
+Two non-obvious gotchas that cost real debugging time when this was set up, worth checking first if leads
+stop arriving or end up in the wrong branch/stage:
 - Every field in Create/Update Contact and Create/update opportunity (Email, Phone, Full name, Opportunity
-  Value, ...) must be a real **merge tag** (a blue "chip", inserted via the 🏷️ tag picker and picked from
-  the dropdown) — typing the literal path as plain text (e.g. `inboundWebhookRequest.email`) looks
-  identical at a glance but resolves to that literal string, not the actual value, and fails silently
-  ("no differentiation field value was provided" / "Lead value should be a numeric value").
+  Value, ...) **and every condition's field-to-compare** (the left side, e.g. `formulier`) must be a real
+  **merge tag** (a blue "chip", inserted via the 🏷️ tag picker and picked from the dropdown) — typing the
+  literal path as plain text (e.g. `inboundWebhookRequest.email`) looks identical at a glance but resolves
+  to that literal string, not the actual value, and fails silently ("no differentiation field value was
+  provided" / "Lead value should be a numeric value"). The condition's *comparison value* on the right
+  (e.g. typing the word `offerte`) is correctly typed as plain text — that half is supposed to be literal.
 - The Inbound Webhook trigger's **Mapping Reference** (which sample request GHL uses to populate the
   available merge-tag list) determines which fields show up as options — pick a sample from an actual
   **offerte** submission (has `prijs`, `adres`, `postcode`, ...), not a `contact` or `dealer` one, or
