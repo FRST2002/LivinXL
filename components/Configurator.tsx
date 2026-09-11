@@ -46,6 +46,9 @@ function usePrijs(state: ConfiguratorState) {
 
   useEffect(() => {
     let cancelled = false;
+    // Intentional: show "recalculating" immediately on every config change, before
+    // the debounced fetch below even starts — not a derivable/external sync case.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
 
     const timeout = setTimeout(() => {

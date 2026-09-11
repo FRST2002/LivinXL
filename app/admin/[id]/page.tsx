@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-export default async function AdminOfferteDetailPage({ params }: { params: { id: string } }) {
-  const offerte = await getOfferteById(params.id);
+export default async function AdminOfferteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const offerte = await getOfferteById(id);
   if (!offerte) notFound();
 
   return (

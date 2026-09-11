@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 LivinXL is a marketing + configurator website for a made-to-measure aluminium veranda brand, built with
-Next.js 14 (App Router), TypeScript, and Tailwind CSS. All UI copy is in Dutch.
+Next.js 16 (App Router), React 19, TypeScript, and Tailwind CSS. All UI copy is in Dutch.
 
 ## Commands
 
@@ -14,8 +14,31 @@ npm install
 npm run dev     # start dev server at http://localhost:3000
 npm run build   # production build
 npm run start   # run the production build
-npm run lint    # next lint (eslint-config-next)
+npm run lint    # eslint . (flat config, eslint.config.mjs) — NOT `next lint`, removed in Next 16
 ```
+
+**Upgraded from Next 14/React 18 to Next 16/React 19** to clear a critical Next.js CVE (`npm audit` was
+otherwise clean beforehand and after). Things this touched that aren't obvious from a diff:
+- `middleware.ts` → **`proxy.ts`**, exported function renamed `middleware` → `proxy` (Next 16 renamed the
+  convention; same behavior, same `config.matcher` export). If you see "Proxy is missing expected function
+  export name" on build, this is why.
+- Dynamic route `params` (e.g. `app/admin/[id]/page.tsx`) are now `Promise<{...}>`, not a plain object —
+  `await params` before use. **This does not surface as a `tsc` or `next build` type error** if you
+  mistype it as a plain object (structural typing doesn't catch it); it silently resolves `params.id` as
+  `undefined` at runtime, which for that page meant a 404 on every offerte. Verified by actually running
+  `npm run build && npm run start` and hitting the route with curl, not by trusting the type-check alone —
+  do the same after any future Next major-version bump.
+- `.eslintrc.json` → **`eslint.config.mjs`** (ESLint 9+ flat config only, no more `.eslintrc.json` shim used
+  here). `eslint-config-next` now exports flat-config arrays directly, e.g.
+  `import nextCoreWebVitals from "eslint-config-next/core-web-vitals"`.
+- Pin `eslint` to the latest **9.x**, not 10.x: `eslint-config-next`'s bundled `eslint-plugin-react` crashes
+  at lint-time under ESLint 10 (`context.getFilename is not a function`) — a real incompatibility, not just
+  an unmet peer-range warning.
+- Next's stricter `react-hooks` lint rules (v7, bundled via `eslint-config-next`) flag synchronous
+  `setState` inside `useEffect` even for legitimate, common patterns (reset a loading flag before a
+  debounced fetch in `Configurator.tsx`; close the mobile menu on route change in `Header.tsx`) — both have
+  a targeted `eslint-disable-next-line react-hooks/set-state-in-effect` with a comment explaining why,
+  rather than being refactored away.
 
 Requires Node.js 18.18+. There is no test suite and no test script configured — don't assume Jest/Vitest
 exists. `npx tsc --noEmit` can be used for a standalone type-check.

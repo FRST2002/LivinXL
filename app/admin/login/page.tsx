@@ -27,6 +27,9 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Intentional full reload (not router.push): forces middleware to see the
+      // fresh session cookie rather than relying on client-side route caching.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/admin";
     } catch {
       setError("Er ging iets mis. Probeer het opnieuw.");
