@@ -24,6 +24,7 @@ Open vervolgens [http://localhost:3000](http://localhost:3000).
 - `/faq` — Veelgestelde vragen
 - `/offerte` — Offerteformulier (neemt configuratie over vanuit de configurator)
 - `/configurator` — Werkende verandaconfigurator; de prijs is vertroebeld totdat een offerte is aangevraagd
+- `/admin` — Overzicht van alle offerteaanvragen (login vereist, zie hieronder)
 
 ## Belangrijkste logica
 
@@ -42,3 +43,7 @@ API) een e-mail met de volledige aanvraag naar `info@livinxl.nl`. Dit vereist ee
 environment variable (zie `.env.example`; bewust niet "RESEND_API_KEY" genoemd, zie CLAUDE.md) — zonder
 die key werken de formulieren nog gewoon, maar wordt
 er geen e-mail verstuurd. `/dealer-worden` heeft nog geen e-mail-/CRM-koppeling.
+
+Elke offerteaanvraag wordt daarnaast opgeslagen in een Postgres-database (Neon, via de Vercel
+Storage-integratie) en is terug te vinden op `/admin` (login met `ADMIN_USERNAME`/`ADMIN_PASSWORD`).
+Vereist `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` en `ADMIN_SESSION_SECRET` (zie `.env.example`).

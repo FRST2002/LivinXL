@@ -123,8 +123,35 @@ is deliberately **not** named `RESEND_API_KEY`: on this project's Vercel dashboa
 reverting to unset (deleted/recreated multiple times, across both "Secret" and "Config" types, redeployed
 each time, confirmed via a temporary `/api/debug-env` route and Vercel's runtime logs) while every other
 variable name worked immediately — so don't rename it back without re-verifying against
-`/api/debug-env` first. `/dealer-worden` has no email
-integration yet. No database is involved anywhere in this app.
+`/api/debug-env` first. `/dealer-worden` has no email integration yet.
+
+### Offertes are persisted to Postgres (Neon) and reviewable at /admin
+
+`app/api/offerte/route.ts` also calls `lib/server/db.ts`'s `saveOfferte()` right after (not instead of)
+`sendOfferteEmail()`, in its own try/catch — a database hiccup must never fail the customer's submission,
+same principle as the email send. `lib/server/db.ts` uses `@neondatabase/serverless` (the modern
+replacement for the now-deprecated `@vercel/postgres`) against a Neon Postgres database provisioned via
+Vercel's Storage integration; it reads `DATABASE_URL` (falling back to `POSTGRES_URL`), lazily runs a
+`CREATE TABLE IF NOT EXISTS offertes (...)` the first time it's used per warm instance, and exposes
+`saveOfferte`/`listOffertes`/`getOfferteById`. **This file must never be imported from a "use client"
+component** — same reasoning as `verandaPrijzen.ts` above, though here it's a raw DB connection string
+rather than purchase prices.
+
+`/admin` (list, newest first) and `/admin/[id]` (detail — customer info + configuration + price, i.e. the
+same content as the customer's on-screen offerte) are Server Components that call these functions
+directly. Both explicitly set `dynamic = "force-dynamic"`, `revalidate = 0`, **and**
+`fetchCache = "force-no-store"` — during development, `force-dynamic` alone was not enough to stop Next
+from caching the Neon driver's internal `fetch()` call (it kept serving the first, pre-any-data render),
+so don't remove the other two even though they look redundant.
+
+Access is gated by `middleware.ts` (matches `/admin/:path*`, redirects to `/admin/login` unless a valid
+session cookie is present) plus `lib/server/adminAuth.ts`, which does the credential check
+(`ADMIN_USERNAME`/`ADMIN_PASSWORD`, plain string compare — there's exactly one admin account, so a
+password hash felt like overkill) and signs/verifies the session cookie with `ADMIN_SESSION_SECRET` using
+the Web Crypto API (`crypto.subtle`) rather than Node's `crypto` module, specifically so the same code
+works in `middleware.ts` (Edge runtime) and in `app/api/admin/{login,logout}/route.ts` (Node runtime). All
+three env vars are deliberately **not** hardcoded in source — this repo is on GitHub, and a literal
+password/secret in a commit is a password/secret leaked to anyone with repo access.
 
 ### Styling
 

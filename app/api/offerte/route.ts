@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendOfferteEmail } from "@/lib/server/email";
+import { saveOfferte } from "@/lib/server/db";
 
 function genereerOfferteNummer(): string {
   const jaar = new Date().getFullYear();
@@ -31,25 +32,34 @@ export async function POST(request: NextRequest) {
     : [];
   const prijs = typeof body.prijs === "number" ? body.prijs : null;
 
+  const offerteData = {
+    offerteNummer,
+    datum,
+    naam: String(body.naam),
+    email: String(body.email),
+    telefoon: String(body.telefoon),
+    adres: String(body.adres ?? ""),
+    postcode: String(body.postcode),
+    plaats: String(body.plaats),
+    model: String(body.model ?? ""),
+    periode: String(body.periode ?? ""),
+    opmerkingen: String(body.opmerkingen ?? ""),
+    configuratieLines,
+    prijs,
+  };
+
   try {
-    await sendOfferteEmail({
-      offerteNummer,
-      datum,
-      naam: String(body.naam),
-      email: String(body.email),
-      telefoon: String(body.telefoon),
-      adres: String(body.adres ?? ""),
-      postcode: String(body.postcode),
-      plaats: String(body.plaats),
-      model: String(body.model ?? ""),
-      periode: String(body.periode ?? ""),
-      opmerkingen: String(body.opmerkingen ?? ""),
-      configuratieLines,
-      prijs,
-    });
+    await sendOfferteEmail(offerteData);
   } catch (error) {
     // Never block the customer's offerte because the internal notification failed.
     console.error("Kon offerte-e-mail niet versturen:", error);
+  }
+
+  try {
+    await saveOfferte(offerteData);
+  } catch (error) {
+    // Same principle: a broken admin-overview save should never fail the customer's request.
+    console.error("Kon offerte niet opslaan voor het admin-overzicht:", error);
   }
 
   return NextResponse.json({ ok: true, offerteNummer, datum });
