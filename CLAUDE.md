@@ -165,6 +165,24 @@ database). All three `app/api/{offerte,contact,dealer}/route.ts` call it in thei
 their existing email/DB calls, same non-blocking principle: a GHL hiccup must never fail the customer's
 submission. Without `GHL_WEBHOOK_URL` set, the call silently no-ops (logged, not surfaced).
 
+The GHL Workflow ("Website → Aanvraag") itself needs, in this order: **Inbound Webhook** trigger →
+**Create/Update Contact** → **Create or update opportunity**. Two non-obvious gotchas that cost real
+debugging time when this was set up, worth checking first if leads stop arriving:
+- Every field in Create/Update Contact and Create/update opportunity (Email, Phone, Full name, Opportunity
+  Value, ...) must be a real **merge tag** (a blue "chip", inserted via the 🏷️ tag picker and picked from
+  the dropdown) — typing the literal path as plain text (e.g. `inboundWebhookRequest.email`) looks
+  identical at a glance but resolves to that literal string, not the actual value, and fails silently
+  ("no differentiation field value was provided" / "Lead value should be a numeric value").
+- The Inbound Webhook trigger's **Mapping Reference** (which sample request GHL uses to populate the
+  available merge-tag list) determines which fields show up as options — pick a sample from an actual
+  **offerte** submission (has `prijs`, `adres`, `postcode`, ...), not a `contact` or `dealer` one, or
+  `prijs` won't be selectable for Opportunity Value.
+- A workflow can show "Published" while still producing zero executions if the trigger's own settings
+  panel was never explicitly saved via its **"Save trigger"** button — check Execution Logs (not the
+  Mapping Reference list, which only proves the endpoint received bytes) to confirm real executions.
+- Also note: "Inbound Webhook" is a **premium GHL trigger** with a per-execution cost, per GHL's own
+  warning in the trigger settings.
+
 ### Styling
 
 Design tokens (the `anthracite`/`copper`/`offwhite` palette, `tracking-tightest`, custom shadows) live in
