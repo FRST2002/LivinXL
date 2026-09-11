@@ -433,6 +433,10 @@ export default function Configurator() {
                 </div>
               </div>
               <div className="mt-3 pl-8">
+                <div className="relative mb-4 aspect-[16/9] w-40 overflow-hidden rounded-xl border border-anthracite-700/12">
+                  <Image src="/wandopties/screens.png" alt="Screen (zip-screen) neergelaten aan de voorkant van een veranda" fill className="object-cover" />
+                </div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Kies de zijden</p>
                 <PositionToggles
                   value={state.screens}
                   options={SCREEN_POSITIONS}
