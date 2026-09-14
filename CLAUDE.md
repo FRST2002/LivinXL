@@ -82,14 +82,26 @@ exists. `npx tsc --noEmit` can be used for a standalone type-check.
 - `components/Configurator.tsx` fetches `/api/prijs` on a 300ms debounce whenever the configuration
   changes (see its local `usePrijs` hook) instead of computing a price synchronously — expect a brief
   "wordt herberekend..." state after each change, not an instant number.
-- The left column is a **one-decision-per-step wizard** (`CONFIGURATOR_STEPS`, same reasoning and pattern
-  as `QuoteForm.tsx`'s question wizard: step-level drop-off becomes visible in analytics later). Unlike
-  the offerte wizard there's no per-step validation to gate "Volgende" — every field already has a default
-  via `CONFIGURATOR_DEFAULTS`, so there's nothing that can be "empty". The right-column summary/price
-  sidebar is intentionally **not** part of the wizard — it stays visible the whole time (sticky on
-  desktop), reflecting the live `state` regardless of which step is showing, so the price visibly updates
-  as someone moves through steps rather than only appearing at the end. The last step's primary button is
-  the same `offerteHref` link the sidebar's CTA already uses, not a dead-end "Volgende".
+- Breedte/diepte in the Afmetingen step have both a slider **and** a typed number input bound to the same
+  `state.width`/`state.depth` — typing isn't clamped on every keystroke (that would make it impossible to
+  type a fresh multi-digit value below the current min, e.g. typing "3" then "30" then "300" would keep
+  snapping back to the min after each digit), only on blur, via the module-level `clamp()` helper.
+- The left column is a **one-decision-per-step wizard** (`CONFIGURATOR_STEPS`: afmetingen, dakmateriaal,
+  kleur, voorkant, zijwand/spie per kant, screens, ledverlichting — 10 steps), so step-level drop-off
+  becomes visible in analytics later. There's no per-step validation gating "Volgende" — every field
+  already has a default via `CONFIGURATOR_DEFAULTS`, so there's nothing that can be "empty". The
+  right-column summary/price sidebar is intentionally **not** part of the wizard — it stays visible the
+  whole time (sticky on desktop), reflecting the live `state` regardless of which step is showing, so the
+  price visibly updates as someone moves through steps. Its "Vraag offerte aan & bekijk uw prijs" button
+  (`isLastStep` in `Configurator.tsx`) is deliberately **disabled** until `step` reaches the final step —
+  customers must click through every step at least once before they can jump straight to the offerte form;
+  only "Stel een vraag" stays reachable at any step. The last wizard step's own primary button is the same
+  `offerteHref` link the sidebar's CTA uses once unlocked, not a dead-end "Volgende". The Screens step has
+  an explicit "Geen" tile (reusing `voorkant-geen.jpg`, the same "open/no wall" photo used elsewhere)
+  alongside the "Screens" tile — clicking "Geen" clears `state.screens`; clicking "Screens" defaults to all
+  positions selected, with the existing per-side toggles underneath to fine-tune from there.
+  QuoteForm.tsx's contact-details form, by contrast, is **not** step-gated — it was tried and reverted back
+  to one plain stacked form (see below), a deliberate choice to keep the two forms different.
 - `lib/finance.ts` — `calculateAnnuity()`, a standalone annuity calculation (7% default indicative rate, up
   to 180 months), plus `nl-NL` currency formatters. Independent of the pricing model above; any page can
   finance any amount. `PRICE_MIN`/`PRICE_MAX` in `lib/pricing.ts` (€7.000–€12.000) are only used as slider
@@ -129,15 +141,14 @@ the price, a human-readable config summary, and width/depth. `QuoteForm.tsx` (`/
 query params (`useSearchParams`, hence the page wraps it in `<Suspense>`) to show a read-only, still-
 blurred "your configuration" preview before submission.
 
-The contact-details form below that preview is a **one-question-per-step wizard**, not a single long form
-— deliberate, so step-level drop-off is visible in analytics (which question people abandon on is real
-signal). `STEPS` in `QuoteForm.tsx` is the single source of truth for both the question order and
-per-field validation (`validateField`); adding/reordering a question means editing that array, not
-scattered JSX. Required fields (naam, email, telefoon, postcode, plaats) block advancing to the next step
-until filled; optional ones (adres, model, periode, opmerkingen) can be skipped with "Volgende". "Terug"
-never re-validates. The underlying `FormState` shape, per-field validation rules, and the final
-`/api/offerte` submission payload are unchanged from the single-page version — only the presentation
-(one field visible at a time, plus a progress bar) changed.
+The contact-details form below that preview is a single plain form (all fields stacked in one column,
+`validate()` checks everything on submit) — this was briefly a one-question-per-step wizard, mirroring
+`Configurator.tsx`'s step-per-decision pattern, but was deliberately reverted: for a short contact-details
+form there's little to learn from per-field drop-off, and clicking "Volgende" nine times to submit gets in
+the way once someone has already decided to request a quote. The configurator keeps its step wizard (see
+above) because *which configuration choice* causes drop-off is genuinely useful signal; which contact
+field someone abandons on generally isn't. Required fields stay naam, email, telefoon, postcode, plaats;
+adres/model/periode/opmerkingen stay optional.
 
 After a customer submits their contact details,
 `QuoteForm` renders a full on-screen "offerte" (quote) document — customer details, configuration, total

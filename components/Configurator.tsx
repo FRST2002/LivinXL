@@ -35,6 +35,10 @@ function spieOpties(zijwandMateriaal: ZijwandMateriaal): MateriaalOption<SpieMat
   if (zijwandMateriaal === "geen") return SPIE_MATERIALEN;
   return SPIE_MATERIALEN.filter((optie) => optie.id !== "geen");
 }
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
 import { formatCurrency } from "@/lib/finance";
 import { IconBulb, IconLayers, IconLock, IconRoof, IconRuler, IconScreen, IconWall } from "@/components/icons";
 
@@ -250,6 +254,7 @@ export default function Configurator() {
 
   const currentStepMeta = CONFIGURATOR_STEPS[step];
   const CurrentStepIcon = currentStepMeta.icon;
+  const isLastStep = step === CONFIGURATOR_STEPS.length - 1;
 
   return (
     <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -298,8 +303,26 @@ export default function Configurator() {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <div className="flex items-baseline justify-between">
-                    <label className="field-label mb-0">Breedte</label>
-                    <span className="text-sm font-semibold text-anthracite-700">{state.width} cm</span>
+                    <label className="field-label mb-0" htmlFor="breedte-getal">Breedte</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        id="breedte-getal"
+                        type="number"
+                        inputMode="numeric"
+                        min={LIMITS.width.min}
+                        max={LIMITS.width.max}
+                        step={LIMITS.width.step}
+                        value={state.width}
+                        onChange={(e) => {
+                          if (e.target.value === "") return;
+                          const parsed = Number(e.target.value);
+                          if (!Number.isNaN(parsed)) update("width", parsed);
+                        }}
+                        onBlur={() => update("width", clamp(state.width, LIMITS.width.min, LIMITS.width.max))}
+                        className="w-20 rounded-lg border border-anthracite-700/15 px-2 py-1 text-right text-sm font-semibold text-anthracite-700 focus:border-copper focus:outline-none"
+                      />
+                      <span className="text-sm font-semibold text-anthracite-700">cm</span>
+                    </div>
                   </div>
                   <input
                     type="range"
@@ -313,8 +336,26 @@ export default function Configurator() {
                 </div>
                 <div>
                   <div className="flex items-baseline justify-between">
-                    <label className="field-label mb-0">Diepte</label>
-                    <span className="text-sm font-semibold text-anthracite-700">{state.depth} cm</span>
+                    <label className="field-label mb-0" htmlFor="diepte-getal">Diepte</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        id="diepte-getal"
+                        type="number"
+                        inputMode="numeric"
+                        min={LIMITS.depth.min}
+                        max={LIMITS.depth.max}
+                        step={LIMITS.depth.step}
+                        value={state.depth}
+                        onChange={(e) => {
+                          if (e.target.value === "") return;
+                          const parsed = Number(e.target.value);
+                          if (!Number.isNaN(parsed)) update("depth", parsed);
+                        }}
+                        onBlur={() => update("depth", clamp(state.depth, LIMITS.depth.min, LIMITS.depth.max))}
+                        className="w-20 rounded-lg border border-anthracite-700/15 px-2 py-1 text-right text-sm font-semibold text-anthracite-700 focus:border-copper focus:outline-none"
+                      />
+                      <span className="text-sm font-semibold text-anthracite-700">cm</span>
+                    </div>
                   </div>
                   <input
                     type="range"
@@ -434,20 +475,56 @@ export default function Configurator() {
 
             {step === 8 && (
               <div>
-                <div className="relative mb-4 aspect-[16/9] w-40 overflow-hidden rounded-xl border border-anthracite-700/12">
-                  <Image
-                    src="/wandopties/screens.png"
-                    alt="Screen (zip-screen) neergelaten aan de voorkant van een veranda"
-                    fill
-                    className="object-cover"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => update("screens", [])}
+                    className={`overflow-hidden rounded-xl border text-left transition-colors ${
+                      state.screens.length === 0
+                        ? "border-copper bg-copper-50"
+                        : "border-anthracite-700/12 hover:border-anthracite-700/30"
+                    }`}
+                  >
+                    <div className="relative aspect-[16/9] w-full">
+                      <Image src="/wandopties/voorkant-geen.jpg" alt="Geen screens" fill className="object-cover" />
+                    </div>
+                    <div className="p-2.5">
+                      <span className="block text-xs font-semibold text-anthracite-700">Geen</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      update("screens", state.screens.length > 0 ? state.screens : SCREEN_POSITIONS.map((p) => p.id))
+                    }
+                    className={`overflow-hidden rounded-xl border text-left transition-colors ${
+                      state.screens.length > 0
+                        ? "border-copper bg-copper-50"
+                        : "border-anthracite-700/12 hover:border-anthracite-700/30"
+                    }`}
+                  >
+                    <div className="relative aspect-[16/9] w-full">
+                      <Image
+                        src="/wandopties/screens.png"
+                        alt="Screen (zip-screen) neergelaten aan de voorkant van een veranda"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="p-2.5">
+                      <span className="block text-xs font-semibold text-anthracite-700">Screens</span>
+                    </div>
+                  </button>
                 </div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Kies de zijden</p>
-                <PositionToggles value={state.screens} options={SCREEN_POSITIONS} onChange={(v) => update("screens", v)} />
+
                 {state.screens.length > 0 && (
-                  <p className="mt-2 text-xs text-anthracite-400">
-                    Standaard antraciet doek. Wilt u een andere kleur? Geef dit aan bij uw offerteaanvraag.
-                  </p>
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Kies de zijden</p>
+                    <PositionToggles value={state.screens} options={SCREEN_POSITIONS} onChange={(v) => update("screens", v)} />
+                    <p className="mt-2 text-xs text-anthracite-400">
+                      Standaard antraciet doek. Wilt u een andere kleur? Geef dit aan bij uw offerteaanvraag.
+                    </p>
+                  </div>
                 )}
               </div>
             )}
@@ -511,9 +588,26 @@ export default function Configurator() {
           </ul>
 
           <div className="mt-6 flex flex-col gap-3">
-            <Link href={offerteHref} className="btn-primary w-full">
-              Vraag offerte aan &amp; bekijk uw prijs
-            </Link>
+            {isLastStep ? (
+              <Link href={offerteHref} className="btn-primary w-full">
+                Vraag offerte aan &amp; bekijk uw prijs
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="btn-primary w-full cursor-not-allowed opacity-40"
+                title="Doorloop eerst alle configuratiestappen hiernaast"
+              >
+                <IconLock className="h-4 w-4 shrink-0" />
+                Vraag offerte aan &amp; bekijk uw prijs
+              </button>
+            )}
+            {!isLastStep && (
+              <p className="text-center text-xs text-anthracite-400">
+                Doorloop eerst alle stappen om een offerte aan te vragen.
+              </p>
+            )}
             <Link href="/contact" className="btn-ghost w-full">
               Stel een vraag
             </Link>
