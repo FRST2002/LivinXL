@@ -171,6 +171,23 @@ function PositionToggles<T extends string>({
   );
 }
 
+// One decision per step (instead of one long scrolling page) so step-level
+// drop-off is visible in analytics later — same reasoning as the offerte
+// wizard. Every field already has a sensible default (CONFIGURATOR_DEFAULTS),
+// so there's nothing to validate before advancing — "Volgende" always works.
+const CONFIGURATOR_STEPS: { title: string; description?: string; icon: typeof IconRuler | null }[] = [
+  { title: "Afmetingen", icon: IconRuler },
+  { title: "Dakmateriaal", icon: IconRoof },
+  { title: "Kleur aluminium frame", icon: null },
+  { title: "Voorkant", description: "Open, of glazen schuifwanden over de volledige breedte", icon: IconLayers },
+  { title: "Linkerzijde — zijwand", icon: IconWall },
+  { title: "Linkerzijde — spie", description: "Het gevelstuk onder het dak, boven de zijwand", icon: IconWall },
+  { title: "Rechterzijde — zijwand", icon: IconWall },
+  { title: "Rechterzijde — spie", description: "Het gevelstuk onder het dak, boven de zijwand", icon: IconWall },
+  { title: "Screens", description: "Elektrische zonwering / windvast doek", icon: IconScreen },
+  { title: "Ledverlichting", description: "Sfeerverlichting geïntegreerd in het dakprofiel", icon: IconBulb },
+];
+
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -193,6 +210,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function Configurator() {
   const [state, setState] = useState<ConfiguratorState>(CONFIGURATOR_DEFAULTS);
+  const [step, setStep] = useState(0);
   const { prijs, loading: prijsLoading, onvolledigeOnderdelen } = usePrijs(state);
 
   const summaryLines = useMemo(() => describeConfiguration(state), [state]);
@@ -222,6 +240,17 @@ export default function Configurator() {
     });
   }
 
+  function goNext() {
+    setStep((s) => Math.min(CONFIGURATOR_STEPS.length - 1, s + 1));
+  }
+
+  function goBack() {
+    setStep((s) => Math.max(0, s - 1));
+  }
+
+  const currentStepMeta = CONFIGURATOR_STEPS[step];
+  const CurrentStepIcon = currentStepMeta.icon;
+
   return (
     <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_420px]">
       {/* Left: options */}
@@ -236,233 +265,214 @@ export default function Configurator() {
           />
         </div>
 
-        {/* Afmetingen */}
+        {/* Stap-voor-stap configuratie: één beslissing per stap i.p.v. alles
+            onder elkaar, zodat straks per stap het afhaakpercentage meetbaar is. */}
         <div className="card p-6 sm:p-8">
-          <div className="flex items-center gap-3">
-            <IconRuler className="h-6 w-6 text-copper" />
-            <h3 className="text-lg font-bold text-anthracite-700">Afmetingen</h3>
-          </div>
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <div className="flex items-baseline justify-between">
-                <label className="field-label mb-0">Breedte</label>
-                <span className="text-sm font-semibold text-anthracite-700">{state.width} cm</span>
-              </div>
-              <input
-                type="range"
-                min={LIMITS.width.min}
-                max={LIMITS.width.max}
-                step={LIMITS.width.step}
-                value={state.width}
-                onChange={(e) => update("width", Number(e.target.value))}
-                className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-anthracite-700/10 accent-copper"
-              />
+          <div>
+            <div className="flex items-center justify-between text-xs font-semibold text-anthracite-400">
+              <span>
+                Vraag {step + 1} van {CONFIGURATOR_STEPS.length}
+              </span>
+              <span>{Math.round(((step + 1) / CONFIGURATOR_STEPS.length) * 100)}%</span>
             </div>
-            <div>
-              <div className="flex items-baseline justify-between">
-                <label className="field-label mb-0">Diepte</label>
-                <span className="text-sm font-semibold text-anthracite-700">{state.depth} cm</span>
-              </div>
-              <input
-                type="range"
-                min={LIMITS.depth.min}
-                max={LIMITS.depth.max}
-                step={LIMITS.depth.step}
-                value={state.depth}
-                onChange={(e) => update("depth", Number(e.target.value))}
-                className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-anthracite-700/10 accent-copper"
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-anthracite-700/8">
+              <div
+                className="h-full rounded-full bg-copper transition-all duration-300"
+                style={{ width: `${((step + 1) / CONFIGURATOR_STEPS.length) * 100}%` }}
               />
             </div>
           </div>
-        </div>
 
-        {/* Dakmateriaal */}
-        <div className="card p-6 sm:p-8">
-          <div className="flex items-center gap-3">
-            <IconRoof className="h-6 w-6 text-copper" />
-            <h3 className="text-lg font-bold text-anthracite-700">Dakmateriaal</h3>
+          <div className="mt-6 flex items-center gap-3">
+            {CurrentStepIcon && <CurrentStepIcon className="h-6 w-6 shrink-0 text-copper" />}
+            <div>
+              <h3 className="text-lg font-bold text-anthracite-700">{currentStepMeta.title}</h3>
+              {currentStepMeta.description && (
+                <p className="text-xs text-anthracite-400">{currentStepMeta.description}</p>
+              )}
+            </div>
           </div>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {ROOF_MATERIALS.map((option) => {
-              const active = state.roofMaterial === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => update("roofMaterial", option.id)}
-                  className={`overflow-hidden rounded-xl border text-left transition-colors ${
-                    active
-                      ? "border-copper bg-copper-50"
-                      : "border-anthracite-700/12 hover:border-anthracite-700/30"
-                  }`}
-                >
-                  <div className="relative h-28 w-full">
-                    <Image src={option.image} alt={option.label} fill className="object-cover" />
-                  </div>
-                  <div className="p-4">
-                    <span className="block text-sm font-semibold text-anthracite-700">{option.label}</span>
-                    <span className="mt-1 block text-xs text-anthracite-400">{option.description}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Kleur */}
-        <div className="card p-6 sm:p-8">
-          <h3 className="text-lg font-bold text-anthracite-700">Kleur aluminium frame</h3>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {FRAME_COLORS.map((color) => {
-              const active = state.frameColor === color.id;
-              return (
-                <button
-                  key={color.id}
-                  type="button"
-                  onClick={() => update("frameColor", color.id)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors ${
-                    active ? "border-copper bg-copper-50" : "border-anthracite-700/12 hover:border-anthracite-700/30"
-                  }`}
-                >
-                  <span
-                    className="h-9 w-9 rounded-full border border-black/10"
-                    style={{ backgroundColor: color.hex }}
-                  />
-                  <span className="text-center text-xs font-semibold text-anthracite-700">{color.label}</span>
-                  <span className="text-[10px] text-anthracite-400">{color.ral}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Opties */}
-        <div className="card p-6 sm:p-8">
-          <h3 className="text-lg font-bold text-anthracite-700">Opties</h3>
-          <div className="mt-6 divide-y divide-anthracite-700/8">
-            <div className="py-4">
-              <div className="flex items-center gap-3">
-                <IconLayers className="h-5 w-5 shrink-0 text-copper" />
+          <div className="mt-6">
+            {step === 0 && (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Voorkant</p>
-                  <p className="text-xs text-anthracite-400">Open, of glazen schuifwanden over de volledige breedte</p>
+                  <div className="flex items-baseline justify-between">
+                    <label className="field-label mb-0">Breedte</label>
+                    <span className="text-sm font-semibold text-anthracite-700">{state.width} cm</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={LIMITS.width.min}
+                    max={LIMITS.width.max}
+                    step={LIMITS.width.step}
+                    value={state.width}
+                    onChange={(e) => update("width", Number(e.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-anthracite-700/10 accent-copper"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-baseline justify-between">
+                    <label className="field-label mb-0">Diepte</label>
+                    <span className="text-sm font-semibold text-anthracite-700">{state.depth} cm</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={LIMITS.depth.min}
+                    max={LIMITS.depth.max}
+                    step={LIMITS.depth.step}
+                    value={state.depth}
+                    onChange={(e) => update("depth", Number(e.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-anthracite-700/10 accent-copper"
+                  />
                 </div>
               </div>
-              <div className="mt-3 pl-8">
+            )}
+
+            {step === 1 && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {ROOF_MATERIALS.map((option) => {
+                  const active = state.roofMaterial === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => update("roofMaterial", option.id)}
+                      className={`overflow-hidden rounded-xl border text-left transition-colors ${
+                        active
+                          ? "border-copper bg-copper-50"
+                          : "border-anthracite-700/12 hover:border-anthracite-700/30"
+                      }`}
+                    >
+                      <div className="relative h-28 w-full">
+                        <Image src={option.image} alt={option.label} fill className="object-cover" />
+                      </div>
+                      <div className="p-4">
+                        <span className="block text-sm font-semibold text-anthracite-700">{option.label}</span>
+                        <span className="mt-1 block text-xs text-anthracite-400">{option.description}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {FRAME_COLORS.map((color) => {
+                  const active = state.frameColor === color.id;
+                  return (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() => update("frameColor", color.id)}
+                      className={`flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors ${
+                        active ? "border-copper bg-copper-50" : "border-anthracite-700/12 hover:border-anthracite-700/30"
+                      }`}
+                    >
+                      <span
+                        className="h-9 w-9 rounded-full border border-black/10"
+                        style={{ backgroundColor: color.hex }}
+                      />
+                      <span className="text-center text-xs font-semibold text-anthracite-700">{color.label}</span>
+                      <span className="text-[10px] text-anthracite-400">{color.ral}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {step === 3 && (
+              <MateriaalPicker
+                options={VOORKANT_MATERIALEN}
+                value={state.voorkant}
+                onChange={(v) => update("voorkant", v)}
+              />
+            )}
+
+            {step === 4 && (
+              <MateriaalPicker
+                options={ZIJWAND_MATERIALEN}
+                value={state.zijwandLinks.materiaal}
+                onChange={(v) => updateKant("zijwandLinks", { materiaal: v })}
+              />
+            )}
+
+            {step === 5 && (
+              <div>
                 <MateriaalPicker
-                  options={VOORKANT_MATERIALEN}
-                  value={state.voorkant}
-                  onChange={(v) => update("voorkant", v)}
+                  options={spieOpties(state.zijwandLinks.materiaal)}
+                  value={state.zijwandLinks.spie}
+                  onChange={(v) => updateKant("zijwandLinks", { spie: v })}
                 />
+                {state.zijwandLinks.materiaal !== "geen" && (
+                  <p className="mt-2 text-xs text-anthracite-400">Verplicht zodra u een zijwand kiest.</p>
+                )}
               </div>
-            </div>
+            )}
 
-            <div className="py-4">
-              <div className="flex items-center gap-3">
-                <IconWall className="h-5 w-5 shrink-0 text-copper" />
-                <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Linkerzijde</p>
-                  <p className="text-xs text-anthracite-400">Kies het materiaal voor de zijwand en de spie</p>
-                </div>
-              </div>
-              <div className="mt-3 space-y-4 pl-8">
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Zijwand</p>
-                  <MateriaalPicker
-                    options={ZIJWAND_MATERIALEN}
-                    value={state.zijwandLinks.materiaal}
-                    onChange={(v) => updateKant("zijwandLinks", { materiaal: v })}
-                  />
-                </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">
-                    Spie (gevelstuk onder het dak)
-                  </p>
-                  <MateriaalPicker
-                    options={spieOpties(state.zijwandLinks.materiaal)}
-                    value={state.zijwandLinks.spie}
-                    onChange={(v) => updateKant("zijwandLinks", { spie: v })}
-                  />
-                  {state.zijwandLinks.materiaal !== "geen" && (
-                    <p className="mt-2 text-xs text-anthracite-400">
-                      Verplicht zodra u een zijwand kiest.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+            {step === 6 && (
+              <MateriaalPicker
+                options={ZIJWAND_MATERIALEN}
+                value={state.zijwandRechts.materiaal}
+                onChange={(v) => updateKant("zijwandRechts", { materiaal: v })}
+              />
+            )}
 
-            <div className="py-4">
-              <div className="flex items-center gap-3">
-                <IconWall className="h-5 w-5 shrink-0 text-copper" />
-                <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Rechterzijde</p>
-                  <p className="text-xs text-anthracite-400">Kies het materiaal voor de zijwand en de spie</p>
-                </div>
+            {step === 7 && (
+              <div>
+                <MateriaalPicker
+                  options={spieOpties(state.zijwandRechts.materiaal)}
+                  value={state.zijwandRechts.spie}
+                  onChange={(v) => updateKant("zijwandRechts", { spie: v })}
+                />
+                {state.zijwandRechts.materiaal !== "geen" && (
+                  <p className="mt-2 text-xs text-anthracite-400">Verplicht zodra u een zijwand kiest.</p>
+                )}
               </div>
-              <div className="mt-3 space-y-4 pl-8">
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Zijwand</p>
-                  <MateriaalPicker
-                    options={ZIJWAND_MATERIALEN}
-                    value={state.zijwandRechts.materiaal}
-                    onChange={(v) => updateKant("zijwandRechts", { materiaal: v })}
-                  />
-                </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">
-                    Spie (gevelstuk onder het dak)
-                  </p>
-                  <MateriaalPicker
-                    options={spieOpties(state.zijwandRechts.materiaal)}
-                    value={state.zijwandRechts.spie}
-                    onChange={(v) => updateKant("zijwandRechts", { spie: v })}
-                  />
-                  {state.zijwandRechts.materiaal !== "geen" && (
-                    <p className="mt-2 text-xs text-anthracite-400">
-                      Verplicht zodra u een zijwand kiest.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+            )}
 
-            <div className="py-4">
-              <div className="flex items-center gap-3">
-                <IconScreen className="h-5 w-5 shrink-0 text-copper" />
-                <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Screens</p>
-                  <p className="text-xs text-anthracite-400">Elektrische zonwering / windvast doek</p>
-                </div>
-              </div>
-              <div className="mt-3 pl-8">
+            {step === 8 && (
+              <div>
                 <div className="relative mb-4 aspect-[16/9] w-40 overflow-hidden rounded-xl border border-anthracite-700/12">
-                  <Image src="/wandopties/screens.png" alt="Screen (zip-screen) neergelaten aan de voorkant van een veranda" fill className="object-cover" />
+                  <Image
+                    src="/wandopties/screens.png"
+                    alt="Screen (zip-screen) neergelaten aan de voorkant van een veranda"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-anthracite-400">Kies de zijden</p>
-                <PositionToggles
-                  value={state.screens}
-                  options={SCREEN_POSITIONS}
-                  onChange={(v) => update("screens", v)}
-                />
+                <PositionToggles value={state.screens} options={SCREEN_POSITIONS} onChange={(v) => update("screens", v)} />
                 {state.screens.length > 0 && (
                   <p className="mt-2 text-xs text-anthracite-400">
                     Standaard antraciet doek. Wilt u een andere kleur? Geef dit aan bij uw offerteaanvraag.
                   </p>
                 )}
               </div>
-            </div>
+            )}
 
-            <div className="flex items-center justify-between gap-4 py-4">
-              <div className="flex items-center gap-3">
-                <IconBulb className="h-5 w-5 text-copper" />
-                <div>
-                  <p className="text-sm font-semibold text-anthracite-700">Ledverlichting</p>
-                  <p className="text-xs text-anthracite-400">Sfeerverlichting geïntegreerd in het dakprofiel</p>
-                </div>
+            {step === 9 && (
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-anthracite-600">Sfeervolle ledverlichting inbegrepen bij uw veranda?</p>
+                <Toggle checked={state.ledverlichting} onChange={(v) => update("ledverlichting", v)} />
               </div>
-              <Toggle checked={state.ledverlichting} onChange={(v) => update("ledverlichting", v)} />
-            </div>
+            )}
+          </div>
+
+          <div className="mt-8 flex items-center justify-between gap-3 border-t border-anthracite-700/8 pt-6">
+            <button type="button" onClick={goBack} className={`btn-ghost ${step === 0 ? "invisible" : ""}`}>
+              Terug
+            </button>
+            {step < CONFIGURATOR_STEPS.length - 1 ? (
+              <button type="button" onClick={goNext} className="btn-primary">
+                Volgende
+              </button>
+            ) : (
+              <Link href={offerteHref} className="btn-primary">
+                Vraag offerte aan &amp; bekijk uw prijs
+              </Link>
+            )}
           </div>
         </div>
       </div>

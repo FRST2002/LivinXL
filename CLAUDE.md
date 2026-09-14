@@ -82,6 +82,14 @@ exists. `npx tsc --noEmit` can be used for a standalone type-check.
 - `components/Configurator.tsx` fetches `/api/prijs` on a 300ms debounce whenever the configuration
   changes (see its local `usePrijs` hook) instead of computing a price synchronously — expect a brief
   "wordt herberekend..." state after each change, not an instant number.
+- The left column is a **one-decision-per-step wizard** (`CONFIGURATOR_STEPS`, same reasoning and pattern
+  as `QuoteForm.tsx`'s question wizard: step-level drop-off becomes visible in analytics later). Unlike
+  the offerte wizard there's no per-step validation to gate "Volgende" — every field already has a default
+  via `CONFIGURATOR_DEFAULTS`, so there's nothing that can be "empty". The right-column summary/price
+  sidebar is intentionally **not** part of the wizard — it stays visible the whole time (sticky on
+  desktop), reflecting the live `state` regardless of which step is showing, so the price visibly updates
+  as someone moves through steps rather than only appearing at the end. The last step's primary button is
+  the same `offerteHref` link the sidebar's CTA already uses, not a dead-end "Volgende".
 - `lib/finance.ts` — `calculateAnnuity()`, a standalone annuity calculation (7% default indicative rate, up
   to 180 months), plus `nl-NL` currency formatters. Independent of the pricing model above; any page can
   finance any amount. `PRICE_MIN`/`PRICE_MAX` in `lib/pricing.ts` (€7.000–€12.000) are only used as slider
