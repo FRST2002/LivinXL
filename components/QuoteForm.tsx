@@ -71,6 +71,57 @@ const initialState: FormState = {
 
 const PERIODE_OPTIONS = ["Zo snel mogelijk", "Binnen 3 maanden", "Binnen 6 maanden", "Nog geen concrete planning"];
 
+type FieldKey = keyof FormState;
+
+interface StepConfig {
+  key: FieldKey;
+  question: string;
+  helper?: string;
+  type: "text" | "email" | "tel" | "select" | "textarea";
+  required: boolean;
+  autoComplete?: string;
+}
+
+// One question per step (instead of one long form) so drop-off per step is
+// visible in analytics — which step people abandon on is real signal about
+// which question is the friction point.
+const STEPS: StepConfig[] = [
+  { key: "naam", question: "Wat is uw naam?", type: "text", required: true, autoComplete: "name" },
+  { key: "email", question: "Wat is uw e-mailadres?", type: "email", required: true, autoComplete: "email" },
+  { key: "telefoon", question: "Wat is uw telefoonnummer?", type: "tel", required: true, autoComplete: "tel" },
+  {
+    key: "adres",
+    question: "Wat is uw adres?",
+    helper: "Straat + huisnummer, optioneel",
+    type: "text",
+    required: false,
+    autoComplete: "street-address",
+  },
+  { key: "postcode", question: "Wat is uw postcode?", type: "text", required: true, autoComplete: "postal-code" },
+  { key: "plaats", question: "In welke plaats woont u?", type: "text", required: true, autoComplete: "address-level2" },
+  { key: "model", question: "Welk model heeft u samengesteld?", type: "text", required: false },
+  { key: "periode", question: "Wanneer wilt u de veranda het liefst geplaatst hebben?", type: "select", required: false },
+  { key: "opmerkingen", question: "Nog iets dat wij moeten weten?", helper: "Optioneel", type: "textarea", required: false },
+];
+
+const REQUIRED_MESSAGES: Partial<Record<FieldKey, string>> = {
+  naam: "Vul uw naam in.",
+  telefoon: "Vul een telefoonnummer in.",
+  postcode: "Vul uw postcode in.",
+  plaats: "Vul uw woonplaats in.",
+};
+
+function validateField(form: FormState, key: FieldKey): string | null {
+  if (key === "email") {
+    return /^\S+@\S+\.\S+$/.test(form.email) ? null : "Vul een geldig e-mailadres in.";
+  }
+  const step = STEPS.find((s) => s.key === key);
+  if (step?.required && !form[key].trim()) {
+    return REQUIRED_MESSAGES[key] ?? "Dit veld is verplicht.";
+  }
+  return null;
+}
+
 interface ConfiguratieSummary {
   prijs: number | null;
   breedte: number | null;
@@ -117,7 +168,8 @@ function buildOfferteSpecs(configuratie: ConfiguratieSummary | null) {
 export default function QuoteForm() {
   const configuratie = useConfiguratieFromQuery();
   const [form, setForm] = useState<FormState>(initialState);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const [step, setStep] = useState(0);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [submitted, setSubmitted] = useState<FormState | null>(null);
   const [offerteMeta, setOfferteMeta] = useState<{ nummer: string; datum: string } | null>(null);
@@ -128,20 +180,16 @@ export default function QuoteForm() {
   }
 
   function validate(): boolean {
-    const next: Partial<Record<keyof FormState, string>> = {};
-    if (!form.naam.trim()) next.naam = "Vul uw naam in.";
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = "Vul een geldig e-mailadres in.";
-    if (!form.telefoon.trim()) next.telefoon = "Vul een telefoonnummer in.";
-    if (!form.postcode.trim()) next.postcode = "Vul uw postcode in.";
-    if (!form.plaats.trim()) next.plaats = "Vul uw woonplaats in.";
+    const next: Partial<Record<FieldKey, string>> = {};
+    for (const s of STEPS) {
+      const error = validateField(form, s.key);
+      if (error) next[s.key] = error;
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!validate()) return;
-
+  async function submitOfferte() {
     setStatus("submitting");
     try {
       const res = await fetch("/api/offerte", {
@@ -160,9 +208,43 @@ export default function QuoteForm() {
       setOfferteMeta({ nummer: data.offerteNummer, datum: data.datum });
       setStatus("success");
       setForm(initialState);
+      setStep(0);
     } catch {
       setStatus("error");
     }
+  }
+
+  function handleStepSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const current = STEPS[step];
+    const error = validateField(form, current.key);
+    if (error) {
+      setErrors((prev) => ({ ...prev, [current.key]: error }));
+      return;
+    }
+    setErrors((prev) => {
+      if (!(current.key in prev)) return prev;
+      const next = { ...prev };
+      delete next[current.key];
+      return next;
+    });
+
+    if (step < STEPS.length - 1) {
+      setStep((s) => s + 1);
+      return;
+    }
+
+    if (!validate()) {
+      const firstInvalid = STEPS.findIndex((s) => validateField(form, s.key));
+      if (firstInvalid !== -1) setStep(firstInvalid);
+      return;
+    }
+
+    void submitOfferte();
+  }
+
+  function handleStepBack() {
+    setStep((s) => Math.max(0, s - 1));
   }
 
   function handleReset() {
@@ -170,6 +252,7 @@ export default function QuoteForm() {
     setSubmitted(null);
     setOfferteMeta(null);
     setFinancing(null);
+    setStep(0);
   }
 
   function handleSaveOfferte() {
@@ -420,99 +503,96 @@ export default function QuoteForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card grid grid-cols-1 gap-6 p-6 sm:grid-cols-2 sm:p-8">
+      <form onSubmit={handleStepSubmit} className="card flex flex-col gap-8 p-6 sm:p-8">
         <div>
-          <label className="field-label" htmlFor="naam">Naam</label>
-          <input id="naam" className="field-input" value={form.naam} onChange={(e) => update("naam", e.target.value)} />
-          {errors.naam && <p className="mt-1 text-xs text-red-600">{errors.naam}</p>}
+          <div className="flex items-center justify-between text-xs font-semibold text-anthracite-400">
+            <span>
+              Vraag {step + 1} van {STEPS.length}
+            </span>
+            <span>{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-anthracite-700/8">
+            <div
+              className="h-full rounded-full bg-copper transition-all duration-300"
+              style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="field-label" htmlFor="email">E-mailadres</label>
-          <input
-            id="email"
-            type="email"
-            className="field-input"
-            value={form.email}
-            onChange={(e) => update("email", e.target.value)}
-          />
-          {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-        </div>
+        {(() => {
+          const current = STEPS[step];
+          const value = form[current.key];
+          const error = errors[current.key];
 
-        <div>
-          <label className="field-label" htmlFor="telefoon">Telefoonnummer</label>
-          <input
-            id="telefoon"
-            type="tel"
-            className="field-input"
-            value={form.telefoon}
-            onChange={(e) => update("telefoon", e.target.value)}
-          />
-          {errors.telefoon && <p className="mt-1 text-xs text-red-600">{errors.telefoon}</p>}
-        </div>
+          return (
+            <div key={current.key}>
+              <label className="text-lg font-bold text-anthracite-700" htmlFor={current.key}>
+                {current.question}
+                {!current.required && (
+                  <span className="ml-2 text-xs font-normal text-anthracite-400">(optioneel)</span>
+                )}
+              </label>
+              {current.helper && <p className="mt-1 text-xs text-anthracite-400">{current.helper}</p>}
 
-        <div>
-          <label className="field-label" htmlFor="adres">Adres (straat + huisnummer)</label>
-          <input id="adres" className="field-input" value={form.adres} onChange={(e) => update("adres", e.target.value)} />
-        </div>
+              {current.type === "select" ? (
+                <select
+                  id={current.key}
+                  className="field-input mt-4"
+                  value={value}
+                  onChange={(e) => update(current.key, e.target.value)}
+                  autoFocus
+                >
+                  {PERIODE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              ) : current.type === "textarea" ? (
+                <textarea
+                  id={current.key}
+                  rows={5}
+                  className="field-input mt-4 resize-none"
+                  value={value}
+                  onChange={(e) => update(current.key, e.target.value)}
+                  autoFocus
+                />
+              ) : (
+                <input
+                  id={current.key}
+                  type={current.type}
+                  autoComplete={current.autoComplete}
+                  className="field-input mt-4"
+                  value={value}
+                  onChange={(e) => update(current.key, e.target.value)}
+                  autoFocus
+                />
+              )}
+              {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+            </div>
+          );
+        })()}
 
-        <div>
-          <label className="field-label" htmlFor="postcode">Postcode</label>
-          <input
-            id="postcode"
-            className="field-input"
-            value={form.postcode}
-            onChange={(e) => update("postcode", e.target.value)}
-          />
-          {errors.postcode && <p className="mt-1 text-xs text-red-600">{errors.postcode}</p>}
-        </div>
+        {status === "error" && (
+          <p className="text-sm text-red-600">
+            Er ging iets mis bij het versturen. Probeer het opnieuw of neem telefonisch contact op.
+          </p>
+        )}
 
-        <div>
-          <label className="field-label" htmlFor="plaats">Woonplaats</label>
-          <input id="plaats" className="field-input" value={form.plaats} onChange={(e) => update("plaats", e.target.value)} />
-          {errors.plaats && <p className="mt-1 text-xs text-red-600">{errors.plaats}</p>}
-        </div>
-
-        <div>
-          <label className="field-label" htmlFor="model">Model</label>
-          <input id="model" className="field-input" value={form.model} onChange={(e) => update("model", e.target.value)} />
-        </div>
-
-        <div>
-          <label className="field-label" htmlFor="periode">Gewenste periode</label>
-          <select
-            id="periode"
-            className="field-input"
-            value={form.periode}
-            onChange={(e) => update("periode", e.target.value)}
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={handleStepBack}
+            className={`btn-ghost ${step === 0 ? "invisible" : ""}`}
           >
-            {PERIODE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className="field-label" htmlFor="opmerkingen">Opmerkingen (optioneel)</label>
-          <textarea
-            id="opmerkingen"
-            rows={5}
-            className="field-input resize-none"
-            value={form.opmerkingen}
-            onChange={(e) => update("opmerkingen", e.target.value)}
-          />
-        </div>
-
-        <div className="sm:col-span-2">
-          {status === "error" && (
-            <p className="mb-4 text-sm text-red-600">
-              Er ging iets mis bij het versturen. Probeer het opnieuw of neem telefonisch contact op.
-            </p>
-          )}
-          <button type="submit" disabled={status === "submitting"} className="btn-primary w-full sm:w-auto">
-            {status === "submitting" ? "Versturen..." : "Offerte aanvragen"}
+            Terug
+          </button>
+          <button type="submit" disabled={status === "submitting"} className="btn-primary">
+            {status === "submitting"
+              ? "Versturen..."
+              : step < STEPS.length - 1
+                ? "Volgende"
+                : "Offerte aanvragen"}
           </button>
         </div>
       </form>

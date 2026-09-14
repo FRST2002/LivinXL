@@ -119,7 +119,19 @@ specific configuration, so gating it wouldn't make sense.
 `Configurator` (`/configurator`) builds an `/offerte?...` link via `configuratorStateToQuery`, carrying
 the price, a human-readable config summary, and width/depth. `QuoteForm.tsx` (`/offerte`) reads these
 query params (`useSearchParams`, hence the page wraps it in `<Suspense>`) to show a read-only, still-
-blurred "your configuration" preview before submission. After a customer submits their contact details,
+blurred "your configuration" preview before submission.
+
+The contact-details form below that preview is a **one-question-per-step wizard**, not a single long form
+— deliberate, so step-level drop-off is visible in analytics (which question people abandon on is real
+signal). `STEPS` in `QuoteForm.tsx` is the single source of truth for both the question order and
+per-field validation (`validateField`); adding/reordering a question means editing that array, not
+scattered JSX. Required fields (naam, email, telefoon, postcode, plaats) block advancing to the next step
+until filled; optional ones (adres, model, periode, opmerkingen) can be skipped with "Volgende". "Terug"
+never re-validates. The underlying `FormState` shape, per-field validation rules, and the final
+`/api/offerte` submission payload are unchanged from the single-page version — only the presentation
+(one field visible at a time, plus a progress bar) changed.
+
+After a customer submits their contact details,
 `QuoteForm` renders a full on-screen "offerte" (quote) document — customer details, configuration, total
 price now unblurred — followed by a live, interactive `FinancingCalculator` so the customer can shape
 their own monthly payment (interest is intentionally never shown anywhere in this flow). An "Offerte
