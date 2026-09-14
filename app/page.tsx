@@ -10,9 +10,7 @@ import {
   IconBulb,
   IconCheck,
   IconCoins,
-  IconCompass,
   IconLayers,
-  IconLeaf,
   IconRoof,
   IconRuler,
   IconScreen,
@@ -26,34 +24,6 @@ const USP_STRIP = [
   { icon: IconWrench, label: "Eigen montageteam" },
   { icon: IconCoins, label: "Termijnen tot 180 mnd" },
   { icon: IconCheck, label: "Vrijblijvende proforma" },
-];
-
-const WHY_LIVINXL = [
-  {
-    icon: IconRuler,
-    title: "Op maat gemaakt",
-    body: "Na uw configuratie komen wij op locatie inmeten, zodat elk profiel precies aansluit op uw woning en situatie.",
-  },
-  {
-    icon: IconWrench,
-    title: "Eigen montageteam",
-    body: "Van inmeten tot plaatsing: uw veranda wordt door ons eigen montageteam geplaatst, doorgaans binnen 3 tot 4 weken na akkoord.",
-  },
-  {
-    icon: IconShield,
-    title: "Transparante prijzen",
-    body: "De configurator geeft direct een richtprijs op basis van uw configuratie. De definitieve offerte volgt na het adviesgesprek en inmeten.",
-  },
-  {
-    icon: IconCoins,
-    title: "Termijnbetaling zonder gedoe",
-    body: "Betaal uw veranda in termijnen tot 180 maanden via onze onafhankelijke financier, en los kosteloos en renteloos extra af wanneer u wilt.",
-  },
-  {
-    icon: IconCheck,
-    title: "Begeleiding in elke stap",
-    body: "Van adviesgesprek en financieringscheck tot de vrijblijvende proforma bij het inmeten: wij begeleiden u door het hele traject.",
-  },
 ];
 
 const FEATURES = [
@@ -89,70 +59,6 @@ const PROJECTS = [
     alt: "LivinXL veranda met glazen hoekoplossing bij helderblauwe lucht",
     location: "Zwolle",
     date: "April 2024",
-  },
-];
-
-const TERMIJN_VOORDELEN = [
-  {
-    icon: IconCoins,
-    title: "Direct genieten, gespreid betalen",
-    body: "Uw veranda wordt geplaatst zodra u akkoord bent; u betaalt geleidelijk terug in plaats van in één keer een groot bedrag vrij te maken.",
-  },
-  {
-    icon: IconCheck,
-    title: "Kosteloos en renteloos extra aflossen",
-    body: "Wilt u toch eerder klaar zijn? U lost altijd zonder boete of extra rente een extra bedrag af, wanneer het u uitkomt.",
-  },
-  {
-    icon: IconCompass,
-    title: "Zelf uw maandbedrag bepalen",
-    body: "Door de looptijd (tot 180 maanden) en een eventuele aanbetaling te kiezen, bepaalt u zelf hoe laag uw maandbedrag start.",
-  },
-  {
-    icon: IconShield,
-    title: "Zorgvuldige, onafhankelijke beoordeling",
-    body: "Onze financier beoordeelt uw aanvraag op basis van uw persoonlijke situatie, zodat het betaalplan echt bij u past.",
-  },
-  {
-    icon: IconLeaf,
-    title: "Uw spaargeld blijft intact",
-    body: "Zo hoeft u geen grote som ineens vrij te maken en houdt u financiële ruimte voor andere plannen.",
-  },
-  {
-    icon: IconRuler,
-    title: "Vooraf een duidelijke berekening",
-    body: "De annuïtaire rekentool laat vooraf precies zien waar u aan toe bent, zodat u niet voor verrassingen komt te staan.",
-  },
-];
-
-const ONDERSCHEID = [
-  {
-    label: "Directe prijsindicatie",
-    competitor: "Vaak pas na een lang offertetraject",
-  },
-  {
-    label: "Eigen montageteam",
-    competitor: "Montage vaak uitbesteed aan derden",
-  },
-  {
-    label: "Betalen in termijnen tot 180 maanden",
-    competitor: "Meestal alleen ineens of beperkt te financieren",
-  },
-  {
-    label: "Kosteloos en renteloos extra aflossen",
-    competitor: "Vaak boeterente bij vervroegd aflossen",
-  },
-  {
-    label: "Volledig zelf samen te stellen",
-    competitor: "Vaste standaardpakketten met weinig keuze",
-  },
-  {
-    label: "Begeleiding in elke stap van het traject",
-    competitor: "Losse schakels, weinig overzicht voor de klant",
-  },
-  {
-    label: "Plaatsing binnen 3 tot 4 weken na akkoord",
-    competitor: "Vaak maanden wachttijd",
   },
 ];
 
@@ -297,87 +203,6 @@ export default function HomePage() {
             Benieuwd wat uw maandbedrag wordt? Reken het hieronder direct uit.
           </p>
           <FinancingStandalone />
-        </div>
-      </section>
-
-      {/* Voordelen termijnbetaling */}
-      <section className="bg-white py-16 sm:py-24">
-        <div className="container-page">
-          <SectionHeading
-            eyebrow="Termijnbetaling"
-            title="De voordelen van betalen in termijnen"
-            description="Spreiden is meer dan alleen makkelijker betalen. Dit zijn de belangrijkste voordelen die klanten noemen wanneer ze hun LivinXL veranda in termijnen betalen."
-          />
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {TERMIJN_VOORDELEN.map((item) => (
-              <div key={item.title} className="card p-6">
-                <item.icon className="h-8 w-8 text-copper" />
-                <h3 className="mt-4 text-base font-bold text-anthracite-700">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-anthracite-500">{item.body}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-10">
-            <Link
-              href="/#termijnbetaling"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-copper hover:text-copper-600"
-            >
-              Bereken uw maandbedrag
-              <IconArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Waarom LivinXL */}
-      <section className="bg-white py-16 sm:py-24">
-        <div className="container-page">
-          <SectionHeading
-            eyebrow="Waarom LivinXL"
-            title="Waarom kiezen voor LivinXL"
-            description="Vijf redenen waarom klanten voor LivinXL kiezen voor hun aluminium veranda op maat."
-          />
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {WHY_LIVINXL.map((item) => (
-              <div key={item.title} className="card p-6">
-                <item.icon className="h-8 w-8 text-copper" />
-                <h3 className="mt-4 text-base font-bold text-anthracite-700">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-anthracite-500">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Onderscheid */}
-      <section className="py-16 sm:py-24">
-        <div className="container-page">
-          <SectionHeading
-            eyebrow="Het verschil"
-            title="Wat maakt LivinXL uniek"
-            description="Een veranda is een investering voor jaren. Dit is waarom klanten voor LivinXL kiezen in plaats van een gemiddeld verandabedrijf."
-          />
-          <div className="mt-10 overflow-hidden rounded-2xl border border-anthracite-700/8 shadow-card">
-            <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-anthracite-700 px-4 py-4 text-[11px] font-semibold uppercase tracking-wide text-white sm:gap-x-4 sm:px-8 sm:text-xs">
-              <span>Waarop het aankomt</span>
-              <span className="text-center text-copper-300">LivinXL</span>
-              <span className="text-center text-offwhite-400/70">Gemiddeld verandabedrijf</span>
-            </div>
-            <div className="divide-y divide-anthracite-700/8 bg-white">
-              {ONDERSCHEID.map((row) => (
-                <div
-                  key={row.label}
-                  className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 px-4 py-5 sm:gap-x-4 sm:px-8"
-                >
-                  <span className="text-xs font-semibold text-anthracite-700 sm:text-sm">{row.label}</span>
-                  <span className="flex justify-center">
-                    <IconCheck className="h-5 w-5 text-copper" />
-                  </span>
-                  <span className="text-center text-[11px] text-anthracite-400 sm:text-xs">{row.competitor}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
